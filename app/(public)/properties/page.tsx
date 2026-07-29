@@ -24,6 +24,7 @@ export default function PropertiesPage() {
   }, []);
   useEffect(() => { load(); }, [page]);
   const search = (event: FormEvent) => { event.preventDefault(); setPage(1); load(1, query); };
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
   return (
     <main className="section">
       <div className="section-head">
@@ -59,7 +60,7 @@ export default function PropertiesPage() {
           ))}
         </div>
       )}
-      <div className="hero-actions"><button className="button button-ghost" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><button className="button button-ghost" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</button></div>
+      <div className="pagination" aria-label="Property pages"><button className="button button-ghost pagination-button" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><div className="pagination-pages">{pageNumbers.map((pageNumber) => <button key={pageNumber} type="button" className={`pagination-number ${pageNumber === page ? "active" : ""}`} aria-current={pageNumber === page ? "page" : undefined} onClick={() => setPage(pageNumber)}>{pageNumber}</button>)}</div><button className="button button-ghost pagination-button" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</button></div>
     </main>
   );
 }

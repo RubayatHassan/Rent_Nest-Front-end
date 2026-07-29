@@ -31,6 +31,41 @@
  .profile-avatar { position: relative; }
  .profile-avatar-image { display: block; width: 100%; height: 100%; object-fit: cover; }
 
+.pagination { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 30px; }
+.pagination-pages { display: flex; align-items: center; gap: 6px; }
+.pagination-number { min-width: 38px; height: 38px; padding: 0 10px; border: 1px solid #bfd2c6; border-radius: 9px; background: #fff; color: var(--green); font: 600 13px inherit; cursor: pointer; }
+.pagination-number:hover, .pagination-number.active { border-color: var(--green); background: var(--green); color: #fff; }
+.pagination-button:disabled, .pagination-number:disabled { cursor: not-allowed; opacity: .45; }
+
+@media (max-width: 600px) {
+  .pagination { gap: 6px; }
+  .pagination-pages { gap: 4px; overflow-x: auto; max-width: 58vw; padding: 2px; }
+  .pagination-number { min-width: 34px; height: 34px; padding: 0 7px; }
+  .pagination-button { padding: 10px 11px; font-size: 11px; }
+}
+
+@media (min-width: 851px) {
+  .property-drawer {
+    width: min(760px, calc(100vw - 80px));
+    padding: 28px 34px;
+  }
+  .property-drawer form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+  .property-drawer textarea,
+  .property-drawer form > button,
+  .property-drawer form > .success-message,
+  .property-drawer form > .form-error {
+    grid-column: 1 / -1;
+  }
+  .property-drawer textarea { min-height: 88px; }
+}
+
+@media (max-width: 850px) {
+  .property-drawer { width: 100%; }
+}
+
 /* Responsive layout: large desktop, tablet and mobile */
 html, body { max-width: 100%; overflow-x: hidden; }
 img { max-width: 100%; }
