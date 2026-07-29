@@ -35,6 +35,7 @@ export default function Page() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const load = () =>
     getMyProperties()
@@ -103,8 +104,10 @@ export default function Page() {
 
   const remove = async (id: string) => {
     if (!window.confirm("Remove this property?")) return;
-    try { await deleteProperty(id); load(); }
+    setError(""); setMessage(""); setRemovingId(id);
+    try { await deleteProperty(id); setMessage("Property removed successfully."); await load(); }
     catch (err) { setError(err instanceof Error ? err.message : "Unable to remove property"); }
+    finally { setRemovingId(null); }
   };
 
   return <div>
@@ -128,6 +131,6 @@ export default function Page() {
       {message && <p className="success-message">{message}</p>}{error && <p className="form-error">{error}</p>}
       </form>
     </aside></div>}
-    <div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Address / Location</th><th>Details</th><th>Rent</th><th>Status</th><th>Action</th></tr></thead><tbody>{items.map((property) => <tr key={property.id}><td><b>{property.title}</b><br /><small>{property.description}</small></td><td>{property.address || "—"}<br /><span className="muted">{property.location}</span></td><td>{property.bedrooms ?? "—"} bed · {property.bathrooms ?? "—"} bath<br />{property.areaSqft ? `${property.areaSqft} sq ft` : "—"}</td><td>{money(property.rentAmount)}</td><td>{property.status}</td><td><button className="text-button" onClick={() => edit(property)}>Edit</button><button className="text-button" onClick={() => remove(property.id)}>Remove</button></td></tr>)}</tbody></table></div>
+    {message && <p className="success-message">{message}</p>}{error && <p className="form-error">{error}</p>}<div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Address / Location</th><th>Details</th><th>Rent</th><th>Status</th><th>Action</th></tr></thead><tbody>{items.map((property) => <tr key={property.id}><td><b>{property.title}</b><br /><small>{property.description}</small></td><td>{property.address || "—"}<br /><span className="muted">{property.location}</span></td><td>{property.bedrooms ?? "—"} bed · {property.bathrooms ?? "—"} bath<br />{property.areaSqft ? `${property.areaSqft} sq ft` : "—"}</td><td>{money(property.rentAmount)}</td><td><span className={`property-status ${property.status.toLowerCase()}`}>{property.status}</span></td><td><button type="button" className="text-button" onClick={() => edit(property)}>Edit</button><button type="button" className="danger-button property-remove-button" disabled={removingId === property.id} onClick={() => remove(property.id)}>{removingId === property.id ? "Removing…" : "Remove"}</button></td></tr>)}</tbody></table></div>
   </div>;
 }
