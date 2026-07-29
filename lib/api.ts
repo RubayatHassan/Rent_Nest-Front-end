@@ -146,6 +146,17 @@ export const getCategories = () =>
     Array.isArray(result) ? { data: result } : result,
   );
 export const getMyProfile = () => api<User>("/users/me");
+export type UpdateProfilePayload = {
+  name?: string;
+  phone?: string;
+  address?: string;
+  profilePhoto?: string;
+};
+export const updateMyProfile = (payload: UpdateProfilePayload) =>
+  api<User>("/users/me", { method: "PATCH", body: JSON.stringify(payload) });
+export const deleteMyProfilePhoto = () =>
+  api<User>("/users/me/profile-photo", { method: "DELETE" });
+export const deleteMyAccount = () => api<null>("/users/me", { method: "DELETE" });
 export const getMyProperties = () =>
   api<ListResponse<Property>>("/landlord/properties");
 export const getLandlordRequests = () =>
