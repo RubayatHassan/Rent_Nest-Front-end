@@ -1,8 +1,10 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
+import { Check, MessageSquare, Send, Star, X } from "lucide-react";
 import { createPayment, createReview, getMyRentals, RentalRequest } from "../../../lib/api";
 
 const PENDING_PAYMENT_KEY = "rentnest.pendingPaymentRentalId";
+type Toast = { tone: "success" | "error" | "warning"; title: string; message: string };
 
 export default function Page() {
   const [items, setItems] = useState<RentalRequest[]>([]);
@@ -10,6 +12,12 @@ export default function Page() {
   const [review, setReview] = useState<Record<string, { rating: string; comment: string }>>({});
   const [openReviewId, setOpenReviewId] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+
+  const showToast = (nextToast: Toast) => {
+    setToast(nextToast);
+    window.setTimeout(() => setToast((current) => current === nextToast ? null : current), 4500);
+  };
 
   const load = async () => {
     try {
@@ -26,13 +34,24 @@ export default function Page() {
     const loadAfterCheckout = async () => {
       const params = new URLSearchParams(window.location.search);
       const pendingId = params.get("rentalRequestId") || sessionStorage.getItem(PENDING_PAYMENT_KEY);
-      const paymentCancelled = params.get("payment") === "cancelled" || params.get("status") === "cancelled";
-      const paymentSucceeded = !paymentCancelled && (params.get("payment") === "success" || params.get("status") === "success" || Boolean(pendingId));
+      const paymentResult = (params.get("payment") || params.get("status") || "").toLowerCase();
+      const paymentSucceeded = paymentResult === "success" || paymentResult === "completed";
+      const paymentFailed = paymentResult === "failed" || paymentResult === "failure";
+      const paymentRejected = paymentResult === "rejected" || paymentResult === "cancelled" || paymentResult === "canceled";
       const rentals = await load();
+
+      if (paymentSucceeded) showToast({ tone: "success", title: "Payment successful", message: "Your payment was completed successfully." });
+      if (paymentFailed) showToast({ tone: "error", title: "Payment failed", message: "Your payment could not be completed. Please try again." });
+      if (paymentRejected) showToast({ tone: "warning", title: "Payment rejected", message: "The payment was cancelled or rejected by the gateway." });
 
       // The payment gateway/webhook may need a moment to update the rental.
       // Refresh briefly after returning so the review form opens as soon as it is eligible.
-      if (paymentSucceeded && pendingId) {
+      if ((paymentSucceeded || paymentFailed || paymentRejected) && pendingId) {
+        if (!paymentSucceeded) {
+          sessionStorage.removeItem(PENDING_PAYMENT_KEY);
+          window.history.replaceState({}, "", "/user-dashboard/my-rentals");
+          return;
+        }
         for (let attempt = 0; attempt < 5; attempt += 1) {
           const rental = rentals.find((item) => item.id === pendingId);
           if (rental?.payment?.status === "COMPLETED") break;
@@ -68,7 +87,9 @@ export default function Page() {
       sessionStorage.setItem(PENDING_PAYMENT_KEY, id);
       window.location.assign(paymentUrl);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Payment failed");
+      const message = e instanceof Error ? e.message : "Payment failed";
+      setError(message);
+      showToast({ tone: "error", title: "Payment failed", message });
       setPayingId(null);
     }
   };
@@ -79,11 +100,12 @@ export default function Page() {
     try {
       await createReview({ rentalRequestId: id, rating: Number(value.rating), comment: value.comment });
       setOpenReviewId(null);
+      showToast({ tone: "success", title: "Review submitted", message: "Thanks for sharing your experience." });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to submit review");
     }
   };
 
-  return <div><div className="resource-head"><div><p className="eyebrow">Your home</p><h1>My rentals</h1></div></div>{error && <p className="form-error">{error}</p>}<div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Message</th><th>Status</th><th>Payment</th><th>Review</th></tr></thead><tbody>{items.map((r) => { const value = review[r.id] || { rating: "5", comment: "" }; const canReview = r.payment?.status === "COMPLETED" && !r.review; return <tr key={r.id}><td>{r.property?.title}</td><td>{r.message}</td><td>{r.status}</td><td>{r.status === "APPROVED" && r.payment?.status !== "COMPLETED" ? <button className="button button-small" disabled={payingId === r.id} onClick={() => pay(r.id)}>{payingId === r.id ? "Opening checkout…" : "Pay now"}</button> : r.payment?.status || "Not available"}</td><td>{canReview && openReviewId === r.id ? <form onSubmit={(e) => submitReview(e, r.id)}><select value={value.rating} onChange={(e) => setReview({ ...review, [r.id]: { ...value, rating: e.target.value } })}><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select><input value={value.comment} onChange={(e) => setReview({ ...review, [r.id]: { ...value, comment: e.target.value } })} placeholder="Comment" required /><button className="text-button">Submit</button></form> : r.review ? `${r.review.rating}/5: ${r.review.comment || ""}` : canReview ? <button className="text-button" onClick={() => setOpenReviewId(r.id)}>Write review</button> : "-"}</td></tr>; })}</tbody></table></div></div>;
+  return <div>{toast && <div className={`status-toast ${toast.tone}`} role="status"><span className="status-toast-icon">{toast.tone === "success" ? <Check size={17} /> : toast.tone === "warning" ? <X size={17} /> : <X size={17} />}</span><div><strong>{toast.title}</strong><p>{toast.message}</p></div><button type="button" aria-label="Dismiss notification" onClick={() => setToast(null)}><X size={15} /></button></div>}<div className="resource-head"><div><p className="eyebrow">Your home</p><h1>My rentals</h1></div></div>{error && <p className="form-error">{error}</p>}<div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Message</th><th>Status</th><th>Payment</th><th>Review</th></tr></thead><tbody>{items.map((r) => { const value = review[r.id] || { rating: "5", comment: "" }; const canReview = r.payment?.status === "COMPLETED" && !r.review; return <tr key={r.id}><td>{r.property?.title}</td><td>{r.message}</td><td>{r.status}</td><td>{r.status === "APPROVED" && r.payment?.status !== "COMPLETED" ? <button className="button button-small" disabled={payingId === r.id} onClick={() => pay(r.id)}>{payingId === r.id ? "Opening checkout…" : "Pay now"}</button> : <span className={`payment-status ${r.payment?.status?.toLowerCase() || "none"}`}>{r.payment?.status || "Not available"}</span>}</td><td>{canReview && openReviewId === r.id ? <form className="review-form" onSubmit={(e) => submitReview(e, r.id)}><div className="review-form-head"><span className="review-icon"><MessageSquare size={17} /></span><div><strong>How was your stay?</strong><small>Your feedback helps other renters.</small></div></div><div className="star-picker" aria-label="Choose a rating">{[1, 2, 3, 4, 5].map((star) => <button type="button" key={star} className={Number(value.rating) >= star ? "selected" : ""} aria-label={`${star} star${star > 1 ? "s" : ""}`} onClick={() => setReview({ ...review, [r.id]: { ...value, rating: String(star) } })}><Star size={24} fill="currentColor" /></button>)}</div><span className="rating-label">{value.rating} out of 5</span><textarea value={value.comment} onChange={(e) => setReview({ ...review, [r.id]: { ...value, comment: e.target.value } })} placeholder="Tell us what made this home feel right…" rows={4} required /><div className="review-actions"><button type="button" className="text-button" onClick={() => setOpenReviewId(null)}>Cancel</button><button className="button button-small"><Send size={14} /> Submit review</button></div></form> : r.review ? <div className="review-summary"><span className="review-stars">{"★".repeat(r.review.rating)}{"☆".repeat(5 - r.review.rating)}</span><span>{r.review.comment || "No comment"}</span></div> : canReview ? <button className="text-button" onClick={() => setOpenReviewId(r.id)}>Write review</button> : "-"}</td></tr>; })}</tbody></table></div></div>;
 }
