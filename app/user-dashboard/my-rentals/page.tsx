@@ -1,7 +1,7 @@
 "use client";
 import { FormEvent, useEffect, useState } from "react";
 import { Check, MessageSquare, Send, Star, X } from "lucide-react";
-import { createPayment, createReview, getMyRentals, RentalRequest } from "../../../lib/api";
+import { confirmPayment, createPayment, createReview, getMyRentals, RentalRequest } from "../../../lib/api";
 
 const PENDING_PAYMENT_KEY = "rentnest.pendingPaymentRentalId";
 type Toast = { tone: "success" | "error" | "warning"; title: string; message: string };
@@ -39,6 +39,25 @@ export default function Page() {
       const paymentFailed = paymentResult === "failed" || paymentResult === "failure";
       const paymentRejected = paymentResult === "rejected" || paymentResult === "cancelled" || paymentResult === "canceled";
       const rentals = await load();
+
+      if ((paymentSucceeded || paymentFailed || paymentRejected) && pendingId) {
+        const returnedRental = rentals.find((item) => item.id === pendingId);
+        const paymentId = params.get("paymentId") || params.get("payment_id") || returnedRental?.payment?.id;
+        const transactionId = params.get("transactionId") || params.get("transaction_id") || undefined;
+        if (paymentId) {
+          try {
+            await confirmPayment({
+              paymentId,
+              transactionId,
+              status: paymentSucceeded ? "COMPLETED" : "FAILED",
+              gatewayResponse: { returnStatus: paymentResult },
+            });
+            await load();
+          } catch {
+            // The payment gateway webhook may already have confirmed this payment.
+          }
+        }
+      }
 
       if (paymentSucceeded) showToast({ tone: "success", title: "Payment successful", message: "Your payment was completed successfully." });
       if (paymentFailed) showToast({ tone: "error", title: "Payment failed", message: "Your payment could not be completed. Please try again." });

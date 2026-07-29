@@ -97,12 +97,28 @@ export async function api<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  let response = await fetch(`${API_URL}${path}`, {
     ...options,
     credentials: "include",
     cache: "no-store",
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
   });
+
+  if (response.status === 401 && path !== "/auth/refresh-token") {
+    const refreshResponse = await fetch(`${API_URL}/auth/refresh-token`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (refreshResponse.ok) {
+      response = await fetch(`${API_URL}${path}`, {
+        ...options,
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      });
+    }
+  }
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.message || "Something went wrong");
@@ -119,6 +135,7 @@ export const login = (payload: { email: string; password: string }) =>
     body: JSON.stringify(payload),
   });
 export const logout = () => api<null>("/auth/logout", { method: "POST" });
+export const refreshToken = () => api<{ message?: string }>("/auth/refresh-token", { method: "POST" });
 export const register = (payload: {
   name: string;
   email: string;
@@ -145,6 +162,7 @@ export const getCategories = () =>
   api<ListResponse<Category> | Category[]>("/categories").then((result) =>
     Array.isArray(result) ? { data: result } : result,
   );
+export const getCategory = (categoryId: string) => api<Category>(`/categories/${categoryId}`);
 export const getMyProfile = () => api<User>("/users/me");
 export type UpdateProfilePayload = {
   name?: string;
