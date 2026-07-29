@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { deleteMyAccount, deleteMyProfilePhoto, getMyProfile, updateMyProfile, User } from "../lib/api";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +13,8 @@ export function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadProfile = async () => {
     try {
@@ -55,10 +58,9 @@ export function ProfilePage() {
   };
 
   const removeAccount = async () => {
-    if (!window.confirm("Are you sure you want to permanently delete your account?")) return;
-    setError("");
+    setError(""); setDeleting(true);
     try { await deleteMyAccount(); router.replace("/"); router.refresh(); }
-    catch (err) { setError(err instanceof Error ? err.message : "Unable to delete your account"); }
+    catch (err) { setError(err instanceof Error ? err.message : "Unable to deactivate your account"); setDeleting(false); }
   };
 
   if (loading) return <div className="loading-state">Loading your profile…</div>;
@@ -83,6 +85,7 @@ export function ProfilePage() {
         <button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
       </form>
     </div>
-    <section className="panel danger-zone"><div><h2>Delete account</h2><p className="muted">This permanently removes your account and cannot be undone.</p></div><button type="button" className="danger-button" onClick={removeAccount}>Delete my account</button></section>
+    <section className="panel danger-zone"><div><h2>Delete account</h2><p className="muted">Your account will be deactivated and removed from the active platform.</p></div><button type="button" className="danger-button profile-delete-button" onClick={() => setDeleteOpen(true)}>Delete my account</button></section>
+    {deleteOpen && <div className="confirmation-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget && !deleting) setDeleteOpen(false); }}><div className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title"><div className="confirmation-icon"><AlertTriangle size={23} /></div><h2 id="delete-account-title">Deactivate your account?</h2><p>Your account will be soft deleted. You will be signed out and your profile will no longer appear as active.</p><div className="confirmation-actions"><button type="button" className="button button-ghost" disabled={deleting} onClick={() => setDeleteOpen(false)}>Keep account</button><button type="button" className="danger-confirm-button" disabled={deleting} onClick={removeAccount}>{deleting ? "Deleting…" : "Yes, delete account"}</button></div></div></div>}
   </>;
 }

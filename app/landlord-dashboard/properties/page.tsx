@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import {
   Category,
   createProperty,
@@ -36,6 +37,7 @@ export default function Page() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmingProperty, setConfirmingProperty] = useState<Property | null>(null);
 
   const load = () =>
     getMyProperties()
@@ -103,9 +105,8 @@ export default function Page() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm("Remove this property?")) return;
     setError(""); setMessage(""); setRemovingId(id);
-    try { await deleteProperty(id); setMessage("Property removed successfully."); await load(); }
+    try { await deleteProperty(id); setConfirmingProperty(null); setMessage("Property removed successfully."); await load(); }
     catch (err) { setError(err instanceof Error ? err.message : "Unable to remove property"); }
     finally { setRemovingId(null); }
   };
@@ -131,6 +132,7 @@ export default function Page() {
       {message && <p className="success-message">{message}</p>}{error && <p className="form-error">{error}</p>}
       </form>
     </aside></div>}
-    {message && <p className="success-message">{message}</p>}{error && <p className="form-error">{error}</p>}<div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Address / Location</th><th>Details</th><th>Rent</th><th>Status</th><th>Action</th></tr></thead><tbody>{items.map((property) => <tr key={property.id}><td><b>{property.title}</b><br /><small>{property.description}</small></td><td>{property.address || "—"}<br /><span className="muted">{property.location}</span></td><td>{property.bedrooms ?? "—"} bed · {property.bathrooms ?? "—"} bath<br />{property.areaSqft ? `${property.areaSqft} sq ft` : "—"}</td><td>{money(property.rentAmount)}</td><td><span className={`property-status ${property.status.toLowerCase()}`}>{property.status}</span></td><td><button type="button" className="text-button" onClick={() => edit(property)}>Edit</button><button type="button" className="danger-button property-remove-button" disabled={removingId === property.id} onClick={() => remove(property.id)}>{removingId === property.id ? "Removing…" : "Remove"}</button></td></tr>)}</tbody></table></div>
+    {confirmingProperty && <div className="confirmation-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setConfirmingProperty(null); }}><div className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="remove-property-title"><div className="confirmation-icon"><AlertTriangle size={23} /></div><h2 id="remove-property-title">Remove property?</h2><p><strong>{confirmingProperty.title}</strong> will be removed from your property list. You can’t undo this action.</p><div className="confirmation-actions"><button type="button" className="button button-ghost" onClick={() => setConfirmingProperty(null)}>Keep property</button><button type="button" className="danger-confirm-button" disabled={removingId === confirmingProperty.id} onClick={() => remove(confirmingProperty.id)}>{removingId === confirmingProperty.id ? "Removing…" : "Yes, remove it"}</button></div></div></div>}
+    {message && <p className="success-message">{message}</p>}{error && <p className="form-error">{error}</p>}<div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Address / Location</th><th>Details</th><th>Rent</th><th>Status</th><th>Action</th></tr></thead><tbody>{items.map((property) => <tr key={property.id}><td><b>{property.title}</b><br /><small>{property.description}</small></td><td>{property.address || "—"}<br /><span className="muted">{property.location}</span></td><td>{property.bedrooms ?? "—"} bed · {property.bathrooms ?? "—"} bath<br />{property.areaSqft ? `${property.areaSqft} sq ft` : "—"}</td><td>{money(property.rentAmount)}</td><td><span className={`property-status ${property.status.toLowerCase()}`}>{property.status}</span></td><td><button type="button" className="text-button" onClick={() => edit(property)}>Edit</button><button type="button" className="danger-button property-remove-button" disabled={removingId === property.id} onClick={() => setConfirmingProperty(property)}>{removingId === property.id ? "Removing…" : "Remove"}</button></td></tr>)}</tbody></table></div>
   </div>;
 }
