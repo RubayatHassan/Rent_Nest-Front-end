@@ -93,6 +93,26 @@ export type ListResponse<T> = { data: T[]; meta?: Meta };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+function formatApiError(body: unknown) {
+  if (!body || typeof body !== "object") return "Something went wrong";
+  const payload = body as Record<string, unknown>;
+  const values = [payload.message, payload.issues, payload.errors];
+  const messages = values.flatMap((value) => {
+    if (!Array.isArray(value)) return typeof value === "string" ? [value] : [];
+    return value.map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "message" in item) {
+        const issue = item as { message?: unknown; path?: unknown };
+        const message = typeof issue.message === "string" ? issue.message : "Invalid value";
+        const path = Array.isArray(issue.path) && issue.path.length ? `${issue.path.join(".")}: ` : "";
+        return `${path}${message}`;
+      }
+      return "Invalid value";
+    });
+  });
+  return [...new Set(messages)].join("\n") || "Something went wrong";
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit = {},
@@ -121,7 +141,7 @@ export async function api<T>(
   }
 
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(body.message || "Something went wrong");
+  if (!response.ok) throw new Error(formatApiError(body));
   // The backend returns pagination metadata beside `data`. Preserve it for
   // list endpoints while keeping the existing convenient `data` return for
   // ordinary detail/auth endpoints.
