@@ -32,7 +32,8 @@ export function ProfilePage() {
     setSaving(true); setError(""); setMessage("");
     try {
       const updated = await updateMyProfile(form);
-      setProfile(updated); setMessage("Profile updated successfully.");
+      setProfile(updated); setForm({ name: "", phone: "", address: "", profilePhoto: "" }); setMessage("Profile updated successfully.");
+      window.setTimeout(() => setMessage(""), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update your profile");
     } finally { setSaving(false); }
@@ -42,7 +43,8 @@ export function ProfilePage() {
     setError(""); setMessage("");
     try {
       const updated = await deleteMyProfilePhoto();
-      setProfile(updated); setMessage("Profile photo removed.");
+      setProfile(updated); setForm({ ...form, profilePhoto: "" }); setMessage("Profile photo removed.");
+      window.setTimeout(() => setMessage(""), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to remove profile photo");
     }
