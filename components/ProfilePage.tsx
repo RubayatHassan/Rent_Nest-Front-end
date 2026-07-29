@@ -74,7 +74,7 @@ export function ProfilePage() {
     {error && <p className="form-error">{error}</p>}
     <div className="profile-layout">
       <section className="panel profile-summary">
-        <div className="profile-photo-row"><div className="profile-avatar">{profile.profilePhoto ? <OptimizedImage src={profile.profilePhoto} alt="Profile" sizes="92px" /> : profile.name.charAt(0).toUpperCase()}</div>{profile.profilePhoto && <button type="button" className="text-button" onClick={removePhoto}>Remove photo</button>}</div>
+        <div className="profile-photo-row"><div className="profile-avatar">{profile.profilePhoto ? <OptimizedImage src={profile.profilePhoto} alt="Profile" width={92} height={92} sizes="92px" className="profile-avatar-image" /> : profile.name.charAt(0).toUpperCase()}</div>{profile.profilePhoto && <button type="button" className="text-button" onClick={removePhoto}>Remove photo</button>}</div>
         <h2>{profile.name}</h2><p className="muted">{profile.email}</p><span className="badge">{profile.role}</span>
       </section>
       <form className="panel profile-form" onSubmit={submit}>
