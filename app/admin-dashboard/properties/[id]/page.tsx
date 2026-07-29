@@ -1,0 +1,1 @@
+"use client"; import { useParams } from "next/navigation"; import { ResourcePage } from "../../../../components/ResourcePage"; export default function Page(){const {id}=useParams<{id:string}>(); return <ResourcePage title="Property details" eyebrow="Marketplace" endpoint={`/admin/properties/${id}`} mapRows="propertyRows"/>}

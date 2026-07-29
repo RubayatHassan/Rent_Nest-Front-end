@@ -1,0 +1,1 @@
+import { ResourcePage } from "../../../components/ResourcePage"; export default function Page(){return <ResourcePage title="My reviews" eyebrow="Your experience" action="Write a review" endpoint="/rentals" mapRows="reviewRows"/>}

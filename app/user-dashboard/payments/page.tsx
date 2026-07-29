@@ -1,0 +1,1 @@
+import { ResourcePage } from "../../../components/ResourcePage"; export default function Page(){return <ResourcePage title="Payments" eyebrow="Your finances" endpoint="/payments" mapRows="paymentRows"/>}

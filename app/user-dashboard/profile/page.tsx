@@ -1,0 +1,1 @@
+import { ResourcePage } from "../../../components/ResourcePage"; export default function Page(){return <ResourcePage title="Profile" eyebrow="Account settings" endpoint="/users/me" mapRows="profileRows"/>}
