@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { deleteMyAccount, deleteMyProfilePhoto, getMyProfile, updateMyProfile, User } from "../lib/api";
 import { useRouter } from "next/navigation";
+import { OptimizedImage } from "./OptimizedImage";
 
 export function ProfilePage() {
   const router = useRouter();
@@ -73,7 +74,7 @@ export function ProfilePage() {
     {error && <p className="form-error">{error}</p>}
     <div className="profile-layout">
       <section className="panel profile-summary">
-        <div className="profile-photo-row"><div className="profile-avatar">{profile.profilePhoto ? <img src={profile.profilePhoto} alt="Profile" /> : profile.name.charAt(0).toUpperCase()}</div>{profile.profilePhoto && <button type="button" className="text-button" onClick={removePhoto}>Remove photo</button>}</div>
+        <div className="profile-photo-row"><div className="profile-avatar">{profile.profilePhoto ? <OptimizedImage src={profile.profilePhoto} alt="Profile" sizes="92px" /> : profile.name.charAt(0).toUpperCase()}</div>{profile.profilePhoto && <button type="button" className="text-button" onClick={removePhoto}>Remove photo</button>}</div>
         <h2>{profile.name}</h2><p className="muted">{profile.email}</p><span className="badge">{profile.role}</span>
       </section>
       <form className="panel profile-form" onSubmit={submit}>

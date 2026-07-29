@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { getCategories, getProperties, Category, Property } from "../../../lib/api";
 import { money } from "../../../lib/mappers";
+import { OptimizedImage } from "../../../components/OptimizedImage";
 export default function PropertiesPage() {
   const [homes, setHomes] = useState<Property[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -43,18 +44,9 @@ export default function PropertiesPage() {
               className="property-card"
               key={home.id}
             >
-              <div
-                className={`property-image ${i % 3 === 1 ? "two" : i % 3 === 2 ? "three" : ""}`}
-                style={
-                  home.images?.[0]
-                    ? {
-                        backgroundImage: `url(${home.images[0]})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }
-                    : undefined
-                }
-              />
+              <div className={`property-image ${i % 3 === 1 ? "two" : i % 3 === 2 ? "three" : ""}`}>
+                {home.images?.[0] && <OptimizedImage src={home.images[0]} alt={home.title} sizes="(max-width: 600px) 100vw, (max-width: 850px) 50vw, 33vw" />}
+              </div>
               <div className="property-info">
                 <h3>{home.title}</h3>
                 <p>{home.location}</p>

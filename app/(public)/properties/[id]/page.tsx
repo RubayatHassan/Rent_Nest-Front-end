@@ -7,6 +7,7 @@ import { Bookmark, ChevronDown, ChevronUp, Star } from "lucide-react";
 import { createRentalRequest, getMe, getProperty, Property } from "../../../../lib/api";
 import { money } from "../../../../lib/mappers";
 import { useSavedHomes } from "../../../../hooks/useSavedHomes";
+import { OptimizedImage } from "../../../../components/OptimizedImage";
 
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
@@ -48,8 +49,8 @@ export default function PropertyDetails() {
     <Link href="/properties" className="muted">← Back to properties</Link>
     <div className="detail-grid">
       <div>
-        <div className="property-image detail-image" style={property.images?.[0] ? { backgroundImage: `url(${property.images[0]})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
-        {property.images?.length > 1 && <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginTop: 12 }}>{property.images.slice(1).map((image) => <div key={image} className="property-image" style={{ backgroundImage: `url(${image})`, backgroundSize: "cover", backgroundPosition: "center", height: 150, borderRadius: 12 }} />)}</div>}
+        <div className="property-image detail-image">{property.images?.[0] && <OptimizedImage src={property.images[0]} alt={property.title} priority sizes="(max-width: 850px) 100vw, 50vw" />}</div>
+        {property.images?.length > 1 && <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginTop: 12 }}>{property.images.slice(1).map((image) => <div key={image} className="property-image" style={{ height: 150, borderRadius: 12 }}><OptimizedImage src={image} alt={`${property.title} photo`} sizes="(max-width: 850px) 50vw, 25vw" /></div>)}</div>}
       </div>
       <div>
         <p className="eyebrow">{property.category?.name || "Featured home"}</p>
