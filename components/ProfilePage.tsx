@@ -14,6 +14,7 @@ export function ProfilePage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
   const [deleting, setDeleting] = useState(false);
 
   const loadProfile = async () => {
@@ -85,7 +86,7 @@ export function ProfilePage() {
         <button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
       </form>
     </div>
-    <section className="panel danger-zone"><div><h2>Delete account</h2><p className="muted">Your account will be deactivated and removed from the active platform.</p></div><button type="button" className="danger-button profile-delete-button" onClick={() => setDeleteOpen(true)}>Delete my account</button></section>
-    {deleteOpen && <div className="confirmation-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget && !deleting) setDeleteOpen(false); }}><div className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title"><div className="confirmation-icon"><AlertTriangle size={23} /></div><h2 id="delete-account-title">Deactivate your account?</h2><p>Your account will be soft deleted. You will be signed out and your profile will no longer appear as active.</p><div className="confirmation-actions"><button type="button" className="button button-ghost" disabled={deleting} onClick={() => setDeleteOpen(false)}>Keep account</button><button type="button" className="danger-confirm-button" disabled={deleting} onClick={removeAccount}>{deleting ? "Deleting…" : "Yes, delete account"}</button></div></div></div>}
+    <section className="panel danger-zone"><div><h2>Delete account</h2><p className="muted">Your account will be deactivated and removed from the active platform.</p></div><button type="button" className="danger-button profile-delete-button" onClick={() => { setDeleteStep(1); setDeleteOpen(true); }}>Delete my account</button></section>
+    {deleteOpen && <div className="confirmation-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget && !deleting) setDeleteOpen(false); }}><div className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">{deleteStep === 1 ? <><div className="confirmation-icon"><AlertTriangle size={23} /></div><h2 id="delete-account-title">Deactivate your account?</h2><p>Your account will be soft deleted. You will be signed out and your profile will no longer appear as active.</p><div className="confirmation-actions"><button type="button" className="button button-ghost" disabled={deleting} onClick={() => setDeleteOpen(false)}>Keep account</button><button type="button" className="danger-confirm-button" disabled={deleting} onClick={() => setDeleteStep(2)}>Continue</button></div></> : <><div className="sad-emoji" aria-hidden="true">😢</div><h2 id="delete-account-title">We’re sad to see you go</h2><p>We’re really sad to see you go. Your account will be soft deleted after this final confirmation.</p><div className="confirmation-actions"><button type="button" className="button button-ghost" disabled={deleting} onClick={() => setDeleteStep(1)}>Go back</button><button type="button" className="danger-confirm-button" disabled={deleting} onClick={removeAccount}>{deleting ? "Deleting…" : "Yes, delete account"}</button></div></>}</div></div>}
   </>;
 }
