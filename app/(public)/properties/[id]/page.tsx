@@ -6,7 +6,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bookmark, ChevronDown, ChevronUp, Star } from "lucide-react";
 import { createRentalRequest, getMe, getProperty, Property } from "../../../../lib/api";
 import { money } from "../../../../lib/mappers";
-import { isHomeSaved, toggleSavedHome } from "../../../../lib/savedHomes";
+import { useSavedHomes } from "../../../../hooks/useSavedHomes";
 
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
@@ -17,10 +17,10 @@ export default function PropertyDetails() {
   const [success, setSuccess] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const { isSaved, toggle: toggleSaved } = useSavedHomes();
 
   useEffect(() => {
-    if (id) getProperty(id).then((loaded) => { setProperty(loaded); setSaved(isHomeSaved(loaded.id)); }).catch((err) => setError(err instanceof Error ? err.message : "Unable to load property"));
+    if (id) getProperty(id).then(setProperty).catch((err) => setError(err instanceof Error ? err.message : "Unable to load property"));
     getMe().then(() => setLoggedIn(true)).catch(() => setLoggedIn(false));
   }, [id]);
 
@@ -41,6 +41,7 @@ export default function PropertyDetails() {
   if (!property) return <main className="section"><p className="muted">Loading property…</p></main>;
 
   const reviews = property.reviews || [];
+  const saved = isSaved(property.id);
   const averageRating = reviews.length ? (reviews.reduce((total, review) => total + review.rating, 0) / reviews.length).toFixed(1) : "0.0";
 
   return <main className="section">
@@ -56,7 +57,7 @@ export default function PropertyDetails() {
         <p className="hero-copy">{property.location}{property.address ? ` · ${property.address}` : ""}</p>
         <p className="muted">{property.description}</p>
         {property.landlord?.name && <div className="landlord-card"><div className="landlord-avatar">{property.landlord.name.charAt(0).toUpperCase()}</div><div><p className="eyebrow">Listed by</p><strong>{property.landlord.name}</strong><p className="muted">Property landlord</p></div></div>}
-        <div className="price detail-price"><strong>{money(property.rentAmount)}</strong><span>per month</span><button type="button" className={`save-home-button ${saved ? "saved" : ""}`} onClick={() => { toggleSavedHome(property); setSaved((current) => !current); }}><Bookmark size={16} fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save home"}</button></div>
+        <div className="price detail-price"><strong>{money(property.rentAmount)}</strong><span>per month</span><button type="button" className={`save-home-button ${saved ? "saved" : ""}`} onClick={() => toggleSaved(property)}><Bookmark size={16} fill={saved ? "currentColor" : "none"} /> {saved ? "Saved" : "Save home"}</button></div>
         <div className="panel property-facts"><div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}><div><strong>{property.bedrooms ?? "—"}</strong><p className="muted">Bedrooms</p></div><div><strong>{property.bathrooms ?? "—"}</strong><p className="muted">Bathrooms</p></div><div><strong>{property.areaSqft ? `${property.areaSqft} ft²` : "—"}</strong><p className="muted">Area</p></div></div></div>
         {property.amenities?.length > 0 && <div className="amenities-block"><p className="eyebrow">Amenities</p><div className="amenities-list">{property.amenities.map((amenity) => <span className="badge" key={amenity}>{amenity}</span>)}</div></div>}
         <div className="tenant-reviews-section"><button type="button" className="tenant-reviews-toggle" onClick={() => setShowReviews((current) => !current)}><span><Star size={17} fill="currentColor" /> Tenant reviews <b>({reviews.length})</b></span><span className="tenant-reviews-summary">{reviews.length ? `${averageRating}/5` : "No reviews yet"} {showReviews ? <ChevronUp size={17} /> : <ChevronDown size={17} />}</span></button>{showReviews && <div className="tenant-reviews-list">{reviews.length ? reviews.map((review) => <article className="tenant-review-card" key={review.id}><div className="tenant-review-top"><strong>{review.tenant?.name || "Tenant"}</strong><span className="review-stars">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span></div><p>{review.comment || "No comment added."}</p></article>) : <p className="tenant-reviews-empty">No tenant reviews have been posted for this property yet.</p>}</div>}</div>

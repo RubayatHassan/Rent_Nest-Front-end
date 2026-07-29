@@ -3,9 +3,9 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Check, Pencil, Save, Star, Trash2, X } from "lucide-react";
 import { deleteReview, getMyRentals, RentalRequest, updateReview } from "../../../lib/api";
+import { useToast } from "../../../hooks/useToast";
 
 type ReviewDraft = { rating: number; comment: string };
-type Toast = { tone: "success" | "error"; title: string; message: string };
 
 export default function Page() {
   const [rentals, setRentals] = useState<RentalRequest[]>([]);
@@ -15,14 +15,9 @@ export default function Page() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [toast, setToast] = useState<Toast | null>(null);
+  const { toast, showToast, dismissToast } = useToast();
 
   const reviews = useMemo(() => rentals.filter((r) => r.review), [rentals]);
-
-  const showToast = (nextToast: Toast) => {
-    setToast(nextToast);
-    window.setTimeout(() => setToast((current) => current === nextToast ? null : current), 4000);
-  };
 
   const load = async () => {
     setLoading(true);
@@ -82,7 +77,7 @@ export default function Page() {
   };
 
   return <div>
-    {toast && <div className={`status-toast ${toast.tone}`} role="status"><span className="status-toast-icon"><Check size={17} /></span><div><strong>{toast.title}</strong><p>{toast.message}</p></div><button type="button" aria-label="Dismiss notification" onClick={() => setToast(null)}><X size={15} /></button></div>}
+    {toast && <div className={`status-toast ${toast.tone}`} role="status"><span className="status-toast-icon"><Check size={17} /></span><div><strong>{toast.title}</strong><p>{toast.message}</p></div><button type="button" aria-label="Dismiss notification" onClick={dismissToast}><X size={15} /></button></div>}
     <div className="resource-head"><div><p className="eyebrow">Your experience</p><h1>My reviews</h1></div><span className="review-count">{reviews.length} {reviews.length === 1 ? "review" : "reviews"}</span></div>
     {error && <p className="form-error">{error}</p>}
     <div className="review-list">
