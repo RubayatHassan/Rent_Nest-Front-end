@@ -1,5 +1,129 @@
 "use client";
+
 import { FormEvent, useEffect, useState } from "react";
-import { createProperty, Category, getCategories, getMyProperties, Property, deleteProperty } from "../../../lib/api";
-import { money } from "../../../lib/mappers";
-export default function Page(){const [items,setItems]=useState<Property[]>([]);const [categories,setCategories]=useState<Category[]>([]);const [error,setError]=useState("");const [message,setMessage]=useState("");const [form,setForm]=useState({title:"",description:"",location:"",address:"",rentAmount:"",categoryId:"",bedrooms:"",bathrooms:"",areaSqft:"",amenities:"",images:""});const load=()=>getMyProperties().then(r=>setItems(r.data||[])).catch(e=>setError(e instanceof Error?e.message:"Unable to load properties"));useEffect(()=>{load();getCategories().then(r=>setCategories(r.data||[])).catch(()=>undefined)},[]);const submit=async(e:FormEvent)=>{e.preventDefault();setError("");try{await createProperty({title:form.title,description:form.description,location:form.location,address:form.address||undefined,rentAmount:Number(form.rentAmount),categoryId:form.categoryId,bedrooms:form.bedrooms?Number(form.bedrooms):undefined,bathrooms:form.bathrooms?Number(form.bathrooms):undefined,areaSqft:form.areaSqft?Number(form.areaSqft):undefined,amenities:form.amenities.split(",").map(x=>x.trim()).filter(Boolean),images:form.images.split(",").map(x=>x.trim()).filter(Boolean),status:"AVAILABLE"});setMessage("Property created successfully.");setForm({...form,title:"",description:"",location:"",address:"",rentAmount:"",bedrooms:"",bathrooms:"",areaSqft:"",amenities:"",images:""});load()}catch(e){setError(e instanceof Error?e.message:"Unable to create property")}};const remove=async(id:string)=>{if(!confirm("Remove this property?"))return;try{await deleteProperty(id);load()}catch(e){setError(e instanceof Error?e.message:"Unable to remove property")}};return <div><div className="resource-head"><div><p className="eyebrow">Property management</p><h1>My properties</h1></div></div><form className="panel" onSubmit={submit}><h2>Add property</h2><input required placeholder="Title" value={form.title} onChange={e=>setForm({...form,title:e.target.value})}/><textarea required placeholder="Description" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/><input required placeholder="Location" value={form.location} onChange={e=>setForm({...form,location:e.target.value})}/><input placeholder="Full address" value={form.address} onChange={e=>setForm({...form,address:e.target.value})}/><input required type="number" placeholder="Monthly rent" value={form.rentAmount} onChange={e=>setForm({...form,rentAmount:e.target.value})}/><select required value={form.categoryId} onChange={e=>setForm({...form,categoryId:e.target.value})}><option value="">Select category</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select><input type="number" min="0" placeholder="Bedrooms" value={form.bedrooms} onChange={e=>setForm({...form,bedrooms:e.target.value})}/><input type="number" min="0" placeholder="Bathrooms" value={form.bathrooms} onChange={e=>setForm({...form,bathrooms:e.target.value})}/><input type="number" min="0" placeholder="Area (sq ft)" value={form.areaSqft} onChange={e=>setForm({...form,areaSqft:e.target.value})}/><input placeholder="Amenities comma separated" value={form.amenities} onChange={e=>setForm({...form,amenities:e.target.value})}/><input placeholder="Image URLs comma separated" value={form.images} onChange={e=>setForm({...form,images:e.target.value})}/><button className="button">Create property</button>{message&&<p className="success-message">{message}</p>}{error&&<p className="form-error">{error}</p>}</form><div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Category</th><th>Rent</th><th>Status</th><th>Action</th></tr></thead><tbody>{items.map(p=><tr key={p.id}><td>{p.title}</td><td>{p.category?.name}</td><td>{money(p.rentAmount)}</td><td>{p.status}</td><td><button className="text-button" onClick={()=>remove(p.id)}>Remove</button></td></tr>)}</tbody></table></div></div>}
+import {
+  Category,
+  createProperty,
+  deleteProperty,
+  getCategories,
+  getMyProperties,
+  Property,
+  updateProperty,
+} from "../../../lib/api";
+
+const emptyForm = {
+  title: "",
+  description: "",
+  location: "",
+  address: "",
+  rentAmount: "",
+  categoryId: "",
+  bedrooms: "",
+  bathrooms: "",
+  areaSqft: "",
+  amenities: "",
+  images: "",
+};
+
+const money = (value: number | string) => `৳${Number(value).toLocaleString()}`;
+
+export default function Page() {
+  const [items, setItems] = useState<Property[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  const load = () =>
+    getMyProperties()
+      .then((result) => setItems(result.data || []))
+      .catch((err) => setError(err instanceof Error ? err.message : "Unable to load properties"));
+
+  useEffect(() => {
+    load();
+    getCategories().then((result) => setCategories(result.data || [])).catch(() => undefined);
+  }, []);
+
+  const setField = (field: keyof typeof emptyForm, value: string) =>
+    setForm((current) => ({ ...current, [field]: value }));
+
+  const edit = (property: Property) => {
+    setEditingId(property.id);
+    setForm({
+      title: property.title || "",
+      description: property.description || "",
+      location: property.location || "",
+      address: property.address || "",
+      rentAmount: String(property.rentAmount ?? ""),
+      categoryId: property.category?.id || "",
+      bedrooms: property.bedrooms == null ? "" : String(property.bedrooms),
+      bathrooms: property.bathrooms == null ? "" : String(property.bathrooms),
+      areaSqft: property.areaSqft == null ? "" : String(property.areaSqft),
+      amenities: (property.amenities || []).join(", "),
+      images: (property.images || []).join(", "),
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => { setEditingId(null); setForm(emptyForm); };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError(""); setMessage("");
+    const payload = {
+      title: form.title,
+      description: form.description,
+      location: form.location,
+      address: form.address || undefined,
+      rentAmount: Number(form.rentAmount),
+      categoryId: form.categoryId,
+      bedrooms: form.bedrooms ? Number(form.bedrooms) : undefined,
+      bathrooms: form.bathrooms ? Number(form.bathrooms) : undefined,
+      areaSqft: form.areaSqft ? Number(form.areaSqft) : undefined,
+      amenities: form.amenities.split(",").map((item) => item.trim()).filter(Boolean),
+      images: form.images.split(",").map((item) => item.trim()).filter(Boolean),
+    };
+    try {
+      if (editingId) {
+        await updateProperty(editingId, payload);
+        setMessage("Property updated successfully.");
+      } else {
+        await createProperty({ ...payload, status: "AVAILABLE" });
+        setMessage("Property created successfully.");
+      }
+      cancelEdit();
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Unable to ${editingId ? "update" : "create"} property`);
+    }
+  };
+
+  const remove = async (id: string) => {
+    if (!window.confirm("Remove this property?")) return;
+    try { await deleteProperty(id); load(); }
+    catch (err) { setError(err instanceof Error ? err.message : "Unable to remove property"); }
+  };
+
+  return <div>
+    <div className="resource-head"><div><p className="eyebrow">Property management</p><h1>My properties</h1></div></div>
+    <form className="panel" onSubmit={submit}>
+      <h2>{editingId ? "Edit property" : "Add property"}</h2>
+      <input required placeholder="Title" value={form.title} onChange={(event) => setField("title", event.target.value)} />
+      <textarea required placeholder="Description" value={form.description} onChange={(event) => setField("description", event.target.value)} />
+      <input required placeholder="Location" value={form.location} onChange={(event) => setField("location", event.target.value)} />
+      <input placeholder="Full address" value={form.address} onChange={(event) => setField("address", event.target.value)} />
+      <input required type="number" min="0" placeholder="Monthly rent" value={form.rentAmount} onChange={(event) => setField("rentAmount", event.target.value)} />
+      <select required value={form.categoryId} onChange={(event) => setField("categoryId", event.target.value)}><option value="">Select category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
+      <input type="number" min="0" placeholder="Bedrooms" value={form.bedrooms} onChange={(event) => setField("bedrooms", event.target.value)} />
+      <input type="number" min="0" placeholder="Bathrooms" value={form.bathrooms} onChange={(event) => setField("bathrooms", event.target.value)} />
+      <input type="number" min="0" placeholder="Area (sq ft)" value={form.areaSqft} onChange={(event) => setField("areaSqft", event.target.value)} />
+      <input placeholder="Amenities comma separated" value={form.amenities} onChange={(event) => setField("amenities", event.target.value)} />
+      <input placeholder="Image URLs comma separated" value={form.images} onChange={(event) => setField("images", event.target.value)} />
+      <button className="button">{editingId ? "Update property" : "Create property"}</button>
+      {editingId && <button type="button" className="button button-ghost" onClick={cancelEdit}>Cancel edit</button>}
+      {message && <p className="success-message">{message}</p>}{error && <p className="form-error">{error}</p>}
+    </form>
+    <div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Address / Location</th><th>Details</th><th>Rent</th><th>Status</th><th>Action</th></tr></thead><tbody>{items.map((property) => <tr key={property.id}><td><b>{property.title}</b><br /><small>{property.description}</small></td><td>{property.address || "—"}<br /><span className="muted">{property.location}</span></td><td>{property.bedrooms ?? "—"} bed · {property.bathrooms ?? "—"} bath<br />{property.areaSqft ? `${property.areaSqft} sq ft` : "—"}</td><td>{money(property.rentAmount)}</td><td>{property.status}</td><td><button className="text-button" onClick={() => edit(property)}>Edit</button><button className="text-button" onClick={() => remove(property.id)}>Remove</button></td></tr>)}</tbody></table></div>
+  </div>;
+}
