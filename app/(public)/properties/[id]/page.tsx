@@ -16,13 +16,13 @@ export default function PropertyDetails() {
   const [duration, setDuration] = useState("12");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [isTenant, setIsTenant] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const { isSaved, toggle: toggleSaved } = useSavedHomes();
 
   useEffect(() => {
     if (id) getProperty(id).then(setProperty).catch((err) => setError(err instanceof Error ? err.message : "Unable to load property"));
-    getMe().then(() => setLoggedIn(true)).catch(() => setLoggedIn(false));
+    getMe().then((user) => setIsTenant(user.role === "TENANT")).catch(() => setIsTenant(false));
   }, [id]);
 
   const submit = async (event: FormEvent) => {
@@ -62,7 +62,7 @@ export default function PropertyDetails() {
         <div className="panel property-facts"><div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}><div><strong>{property.bedrooms ?? "—"}</strong><p className="muted">Bedrooms</p></div><div><strong>{property.bathrooms ?? "—"}</strong><p className="muted">Bathrooms</p></div><div><strong>{property.areaSqft ? `${property.areaSqft} ft²` : "—"}</strong><p className="muted">Area</p></div></div></div>
         {property.amenities?.length > 0 && <div className="amenities-block"><p className="eyebrow">Amenities</p><div className="amenities-list">{property.amenities.map((amenity) => <span className="badge" key={amenity}>{amenity}</span>)}</div></div>}
         <div className="tenant-reviews-section"><button type="button" className="tenant-reviews-toggle" onClick={() => setShowReviews((current) => !current)}><span><Star size={17} fill="currentColor" /> Tenant reviews <b>({reviews.length})</b></span><span className="tenant-reviews-summary">{reviews.length ? `${averageRating}/5` : "No reviews yet"} {showReviews ? <ChevronUp size={17} /> : <ChevronDown size={17} />}</span></button>{showReviews && <div className="tenant-reviews-list">{reviews.length ? reviews.map((review) => <article className="tenant-review-card" key={review.id}><div className="tenant-review-top"><strong>{review.tenant?.name || "Tenant"}</strong><span className="review-stars">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span></div><p>{review.comment || "No comment added."}</p></article>) : <p className="tenant-reviews-empty">No tenant reviews have been posted for this property yet.</p>}</div>}</div>
-        {loggedIn ? <form className="panel" onSubmit={submit}><h2>Request this property</h2><textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a message to the landlord" required /><input type="number" min="1" max="60" value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="Duration in months" /><button className="button">Send rental request</button>{success && <p className="success-message">{success}</p>}{error && <p className="form-error">{error}</p>}</form> : <Link href={`/login?redirect=/properties/${property.id}`} className="button">Log in to request</Link>}
+        {isTenant && <form className="panel" onSubmit={submit}><h2>Request this property</h2><textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a message to the landlord" required /><input type="number" min="1" max="60" value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="Duration in months" /><button className="button">Send rental request</button>{success && <p className="success-message">{success}</p>}{error && <p className="form-error">{error}</p>}</form>}
       </div>
     </div>
   </main>;
