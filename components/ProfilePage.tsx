@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 export function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<User | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", address: "", profilePhoto: "" });
+  const [form, setForm] = useState({ phone: "", address: "", profilePhoto: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -17,7 +17,7 @@ export function ProfilePage() {
     try {
       const user = await getMyProfile();
       setProfile(user);
-      setForm({ name: user.name || "", phone: user.phone || "", address: user.address || "", profilePhoto: user.profilePhoto || "" });
+      setForm({ phone: (user.phone || "").replace(/\D/g, "").slice(0, 11), address: user.address || "", profilePhoto: user.profilePhoto || "" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load your profile");
     } finally {
@@ -30,9 +30,13 @@ export function ProfilePage() {
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true); setError(""); setMessage("");
+    const payload = Object.fromEntries(Object.entries(form).filter(([, value]) => value.trim())) as { phone?: string; address?: string; profilePhoto?: string };
+    if (!Object.keys(payload).length) {
+      setError("Please fill in at least one field to update."); setSaving(false); return;
+    }
     try {
-      const updated = await updateMyProfile(form);
-      setProfile(updated); setForm({ name: "", phone: "", address: "", profilePhoto: "" }); setMessage("Profile updated successfully.");
+      const updated = await updateMyProfile(payload);
+      setProfile(updated); setForm({ phone: "", address: "", profilePhoto: "" }); setMessage("Profile updated successfully.");
       window.setTimeout(() => setMessage(""), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to update your profile");
@@ -70,9 +74,10 @@ export function ProfilePage() {
         <h2>{profile.name}</h2><p className="muted">{profile.email}</p><span className="badge">{profile.role}</span>
       </section>
       <form className="panel profile-form" onSubmit={submit}>
-        <h2>Edit your information</h2>
-        <label>Full name<input value={form.name} required onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-        <label>Phone number<input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Your phone number" /></label>
+        <h2>Update your information</h2>
+        <p className="field-hint profile-form-note">Name is fixed. Update any one of the fields below.</p>
+        <label>Full name<input value={profile.name} readOnly /></label>
+        <label>Mobile number<input type="tel" inputMode="numeric" maxLength={11} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 11) })} placeholder="11 digit mobile number" /><span className="field-hint">Maximum 11 digits.</span></label>
         <label>Address<textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Your address" /></label>
         <label>Profile photo URL<input type="url" value={form.profilePhoto} onChange={(e) => setForm({ ...form, profilePhoto: e.target.value })} placeholder="https://example.com/profile-photo.jpg" /><span className="field-hint">Paste a public image URL.</span></label>
         <button className="button" type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>

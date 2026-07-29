@@ -32,6 +32,7 @@ export default function Page() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -50,6 +51,7 @@ export default function Page() {
 
   const edit = (property: Property) => {
     setEditingId(property.id);
+    setDrawerOpen(true);
     setForm({
       title: property.title || "",
       description: property.description || "",
@@ -66,7 +68,7 @@ export default function Page() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const cancelEdit = () => { setEditingId(null); setForm(emptyForm); };
+  const cancelEdit = () => { setEditingId(null); setForm(emptyForm); setDrawerOpen(false); };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -106,9 +108,10 @@ export default function Page() {
   };
 
   return <div>
-    <div className="resource-head"><div><p className="eyebrow">Property management</p><h1>My properties</h1></div></div>
-    <form className="panel" onSubmit={submit}>
-      <h2>{editingId ? "Edit property" : "Add property"}</h2>
+    <div className="resource-head"><div><p className="eyebrow">Property management</p><h1>My properties</h1></div><button className="button" type="button" onClick={() => { setEditingId(null); setForm(emptyForm); setDrawerOpen(true); }}>+ Add property</button></div>
+    {drawerOpen && <div className="drawer-backdrop" onClick={(event) => { if (event.target === event.currentTarget) cancelEdit(); }}><aside className="property-drawer panel">
+      <div className="drawer-head"><h2>{editingId ? "Edit property" : "Add property"}</h2><button type="button" className="drawer-close" onClick={cancelEdit} aria-label="Close">×</button></div>
+      <form onSubmit={submit}>
       <input required placeholder="Title" value={form.title} onChange={(event) => setField("title", event.target.value)} />
       <textarea required placeholder="Description" value={form.description} onChange={(event) => setField("description", event.target.value)} />
       <input required placeholder="Location" value={form.location} onChange={(event) => setField("location", event.target.value)} />
@@ -123,7 +126,8 @@ export default function Page() {
       <button className="button">{editingId ? "Update property" : "Create property"}</button>
       {editingId && <button type="button" className="button button-ghost" onClick={cancelEdit}>Cancel edit</button>}
       {message && <p className="success-message">{message}</p>}{error && <p className="form-error">{error}</p>}
-    </form>
+      </form>
+    </aside></div>}
     <div className="panel table-panel"><table className="data-table"><thead><tr><th>Property</th><th>Address / Location</th><th>Details</th><th>Rent</th><th>Status</th><th>Action</th></tr></thead><tbody>{items.map((property) => <tr key={property.id}><td><b>{property.title}</b><br /><small>{property.description}</small></td><td>{property.address || "—"}<br /><span className="muted">{property.location}</span></td><td>{property.bedrooms ?? "—"} bed · {property.bathrooms ?? "—"} bath<br />{property.areaSqft ? `${property.areaSqft} sq ft` : "—"}</td><td>{money(property.rentAmount)}</td><td>{property.status}</td><td><button className="text-button" onClick={() => edit(property)}>Edit</button><button className="text-button" onClick={() => remove(property.id)}>Remove</button></td></tr>)}</tbody></table></div>
   </div>;
 }
