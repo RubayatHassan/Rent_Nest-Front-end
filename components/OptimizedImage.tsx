@@ -10,10 +10,39 @@ type OptimizedImageProps = {
   height?: number;
 };
 
-export function OptimizedImage({ src, alt, priority = false, sizes, className, width, height }: OptimizedImageProps) {
+export function OptimizedImage({
+  src,
+  alt,
+  priority = false,
+  sizes,
+  className,
+  width,
+  height,
+}: OptimizedImageProps) {
   if (width && height) {
-    return <Image src={src} alt={alt} width={width} height={height} sizes={sizes} priority={priority} className={className} style={{ objectFit: "cover" }} />;
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        sizes={sizes}
+        priority={priority}
+        className={className}
+        style={{ objectFit: "cover" }}
+      />
+    );
   }
 
-  return <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className={className} style={{ objectFit: "cover" }} />;
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      sizes={sizes}
+      priority={priority}
+      className={className}
+      style={{ objectFit: "cover" }}
+    />
+  );
 }

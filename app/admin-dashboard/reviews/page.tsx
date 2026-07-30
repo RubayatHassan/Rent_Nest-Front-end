@@ -1,5 +1,88 @@
 "use client";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { deleteAdminReview, getAdminRentals, RentalRequest } from "../../../lib/api";
-export default function Page(){const [items,setItems]=useState<RentalRequest[]>([]);const [query,setQuery]=useState("");const [error,setError]=useState("");const load=()=>getAdminRentals("limit=100").then(r=>setItems((r.data||[]).filter(x=>x.review))).catch(e=>setError(e instanceof Error?e.message:"Unable to load reviews"));useEffect(()=>{load()},[]);const remove=async(id:string)=>{try{await deleteAdminReview(id);load()}catch(e){setError(e instanceof Error?e.message:"Unable to delete review")}};const filtered=items.filter(r=>`${r.property?.title||""} ${r.tenant?.name||""} ${r.review?.rating||""} ${r.review?.comment||""}`.toLowerCase().includes(query.toLowerCase()));return <div><div className="resource-head"><div><p className="eyebrow">Community</p><h1>Reviews</h1></div></div>{error&&<p className="form-error">{error}</p>}<div className="panel table-panel"><div className="table-tools"><div className="search-box"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search reviews by property, tenant or comment..." /></div><span className="muted">{filtered.length} results</span></div><table className="data-table"><thead><tr><th>Property</th><th>Tenant</th><th>Rating</th><th>Comment</th><th>Action</th></tr></thead><tbody>{filtered.map(r=><tr key={r.review?.id}><td>{r.property?.title}</td><td>{r.tenant?.name}</td><td>{r.review?.rating}/5</td><td>{r.review?.comment}</td><td><button className="text-button" onClick={()=>remove(r.review!.id)}>Delete</button></td></tr>)}</tbody></table></div></div>}
+import {
+  deleteAdminReview,
+  getAdminRentals,
+  RentalRequest,
+} from "../../../lib/api";
+export default function Page() {
+  const [items, setItems] = useState<RentalRequest[]>([]);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
+  const load = () =>
+    getAdminRentals("limit=100")
+      .then((r) => setItems((r.data || []).filter((x) => x.review)))
+      .catch((e) =>
+        setError(e instanceof Error ? e.message : "Unable to load reviews"),
+      );
+  useEffect(() => {
+    load();
+  }, []);
+  const remove = async (id: string) => {
+    try {
+      await deleteAdminReview(id);
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to delete review");
+    }
+  };
+  const filtered = items.filter((r) =>
+    `${r.property?.title || ""} ${r.tenant?.name || ""} ${r.review?.rating || ""} ${r.review?.comment || ""}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
+  return (
+    <div>
+      <div className="resource-head">
+        <div>
+          <p className="eyebrow">Community</p>
+          <h1>Reviews</h1>
+        </div>
+      </div>
+      {error && <p className="form-error">{error}</p>}
+      <div className="panel table-panel">
+        <div className="table-tools">
+          <div className="search-box">
+            <Search size={16} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search reviews by property, tenant or comment..."
+            />
+          </div>
+          <span className="muted">{filtered.length} results</span>
+        </div>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Tenant</th>
+              <th>Rating</th>
+              <th>Comment</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((r) => (
+              <tr key={r.review?.id}>
+                <td>{r.property?.title}</td>
+                <td>{r.tenant?.name}</td>
+                <td>{r.review?.rating}/5</td>
+                <td>{r.review?.comment}</td>
+                <td>
+                  <button
+                    className="text-button"
+                    onClick={() => remove(r.review!.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

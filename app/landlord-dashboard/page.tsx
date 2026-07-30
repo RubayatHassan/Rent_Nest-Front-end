@@ -1,2 +1,4 @@
 import { DashboardPage } from "../../components/DashboardPage";
-export default function Page(){return <DashboardPage role="LANDLORD"/>}
+export default function Page() {
+  return <DashboardPage role="LANDLORD" />;
+}

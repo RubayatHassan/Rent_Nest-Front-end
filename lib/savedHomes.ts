@@ -5,7 +5,9 @@ const SAVED_HOMES_KEY = "rentnest.savedHomes";
 export function getSavedHomes(): Property[] {
   if (typeof window === "undefined") return [];
   try {
-    const saved = JSON.parse(window.localStorage.getItem(SAVED_HOMES_KEY) || "[]");
+    const saved = JSON.parse(
+      window.localStorage.getItem(SAVED_HOMES_KEY) || "[]",
+    );
     return Array.isArray(saved) ? saved : [];
   } catch {
     return [];

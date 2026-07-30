@@ -9,11 +9,14 @@ export function useToast(duration = 4500) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const timer = useRef<number | null>(null);
 
-  const showToast = useCallback((nextToast: ToastState) => {
-    if (timer.current) window.clearTimeout(timer.current);
-    setToast(nextToast);
-    timer.current = window.setTimeout(() => setToast(null), duration);
-  }, [duration]);
+  const showToast = useCallback(
+    (nextToast: ToastState) => {
+      if (timer.current) window.clearTimeout(timer.current);
+      setToast(nextToast);
+      timer.current = window.setTimeout(() => setToast(null), duration);
+    },
+    [duration],
+  );
 
   const dismissToast = useCallback(() => {
     if (timer.current) window.clearTimeout(timer.current);

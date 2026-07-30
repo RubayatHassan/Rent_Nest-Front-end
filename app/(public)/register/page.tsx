@@ -1,3 +1,90 @@
 "use client";
-import Link from "next/link"; import { FormEvent, useState } from "react"; import { register, Role } from "../../../lib/api"; import { useRouter } from "next/navigation";
-export default function RegisterPage(){const router=useRouter();const [error,setError]=useState("");const submit=async(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();setError("");const f=new FormData(e.currentTarget);try{await register({name:String(f.get("name")),email:String(f.get("email")),password:String(f.get("password")),role:String(f.get("role")) as Role});router.push("/");router.refresh()}catch(err){setError(err instanceof Error?err.message:"Registration failed")}};return <main className="auth-page"><div className="auth-copy"><Link href="/" className="brand"><span>R</span> RentNest</Link><h1>Make space for a better life.</h1><p>Join a community built around finding, renting, and caring for great homes.</p></div><div className="auth-form-wrap"><form className="auth-form" onSubmit={submit}><p className="eyebrow">Get started</p><h1>Create account</h1><p>It only takes a minute to get started.</p><div className="form-group"><label>Full name</label><input name="name" required minLength={2} placeholder="Name is sensitive and cannot be changed later" /></div><div className="form-group"><label>Email address</label><input name="email" type="email" required placeholder="you@example.com" /></div><div className="form-group"><label>Password</label><input name="password" type="password" required minLength={6} placeholder="At least 6 characters" /></div><div className="form-group"><label>I am joining as</label><select name="role" defaultValue="TENANT"><option value="TENANT">Tenant</option><option value="LANDLORD">Landlord</option></select></div>{error&&<p className="form-error">{error}</p>}<button className="button full">Create account</button><p className="muted">Already have an account? <Link href="/login" className="nav-login">Log in</Link></p></form></div></main>}
+import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { register, Role } from "../../../lib/api";
+import { useRouter } from "next/navigation";
+export default function RegisterPage() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    const f = new FormData(e.currentTarget);
+    try {
+      await register({
+        name: String(f.get("name")),
+        email: String(f.get("email")),
+        password: String(f.get("password")),
+        role: String(f.get("role")) as Role,
+      });
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed");
+    }
+  };
+  return (
+    <main className="auth-page">
+      <div className="auth-copy">
+        <Link href="/" className="brand">
+          <span>R</span> RentNest
+        </Link>
+        <h1>Make space for a better life.</h1>
+        <p>
+          Join a community built around finding, renting, and caring for great
+          homes.
+        </p>
+      </div>
+      <div className="auth-form-wrap">
+        <form className="auth-form" onSubmit={submit}>
+          <p className="eyebrow">Get started</p>
+          <h1>Create account</h1>
+          <p>It only takes a minute to get started.</p>
+          <div className="form-group">
+            <label>Full name</label>
+            <input
+              name="name"
+              required
+              minLength={2}
+              placeholder="Name is sensitive and cannot be changed later"
+            />
+          </div>
+          <div className="form-group">
+            <label>Email address</label>
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="you@example.com"
+            />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              name="password"
+              type="password"
+              required
+              minLength={6}
+              placeholder="At least 6 characters"
+            />
+          </div>
+          <div className="form-group">
+            <label>I am joining as</label>
+            <select name="role" defaultValue="TENANT">
+              <option value="TENANT">Tenant</option>
+              <option value="LANDLORD">Landlord</option>
+            </select>
+          </div>
+          {error && <p className="form-error">{error}</p>}
+          <button className="button full">Create account</button>
+          <p className="muted">
+            Already have an account?{" "}
+            <Link href="/login" className="nav-login">
+              Log in
+            </Link>
+          </p>
+        </form>
+      </div>
+    </main>
+  );
+}

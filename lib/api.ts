@@ -103,8 +103,12 @@ function formatApiError(body: unknown) {
       if (typeof item === "string") return item;
       if (item && typeof item === "object" && "message" in item) {
         const issue = item as { message?: unknown; path?: unknown };
-        const message = typeof issue.message === "string" ? issue.message : "Invalid value";
-        const path = Array.isArray(issue.path) && issue.path.length ? `${issue.path.join(".")}: ` : "";
+        const message =
+          typeof issue.message === "string" ? issue.message : "Invalid value";
+        const path =
+          Array.isArray(issue.path) && issue.path.length
+            ? `${issue.path.join(".")}: `
+            : "";
         return `${path}${message}`;
       }
       return "Invalid value";
@@ -135,7 +139,10 @@ export async function api<T>(
         ...options,
         credentials: "include",
         cache: "no-store",
-        headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+        },
       });
     }
   }
@@ -155,7 +162,8 @@ export const login = (payload: { email: string; password: string }) =>
     body: JSON.stringify(payload),
   });
 export const logout = () => api<null>("/auth/logout", { method: "POST" });
-export const refreshToken = () => api<{ message?: string }>("/auth/refresh-token", { method: "POST" });
+export const refreshToken = () =>
+  api<{ message?: string }>("/auth/refresh-token", { method: "POST" });
 export const register = (payload: {
   name: string;
   email: string;
@@ -168,21 +176,22 @@ export const register = (payload: {
   });
 export const getProperties = (query = "") =>
   api<ListResponse<Property> | Property[]>(
-    `/properties${query ? `?${query}` : ""}`
+    `/properties${query ? `?${query}` : ""}`,
   ).then((result) =>
     Array.isArray(result)
       ? { data: result }
       : {
           ...result,
           data: Array.isArray(result?.data) ? result.data : [],
-        }
+        },
   );
 export const getProperty = (id: string) => api<Property>(`/properties/${id}`);
 export const getCategories = () =>
   api<ListResponse<Category> | Category[]>("/categories").then((result) =>
     Array.isArray(result) ? { data: result } : result,
   );
-export const getCategory = (categoryId: string) => api<Category>(`/categories/${categoryId}`);
+export const getCategory = (categoryId: string) =>
+  api<Category>(`/categories/${categoryId}`);
 export const getMyProfile = () => api<User>("/users/me");
 export type UpdateProfilePayload = {
   name?: string;
@@ -194,7 +203,8 @@ export const updateMyProfile = (payload: UpdateProfilePayload) =>
   api<User>("/users/me", { method: "PATCH", body: JSON.stringify(payload) });
 export const deleteMyProfilePhoto = () =>
   api<User>("/users/me/profile-photo", { method: "DELETE" });
-export const deleteMyAccount = () => api<null>("/users/me", { method: "DELETE" });
+export const deleteMyAccount = () =>
+  api<null>("/users/me", { method: "DELETE" });
 export const getMyProperties = () =>
   api<ListResponse<Property>>("/landlord/properties");
 export const getLandlordRequests = () =>
@@ -211,21 +221,68 @@ export const getAdminPayments = (query = "") =>
   api<ListResponse<Payment>>(`/admin/payments${query ? `?${query}` : ""}`);
 export const getAdminCategories = () =>
   api<ListResponse<Category>>("/admin/categories");
-export const createCategory = (payload: { name: string; description?: string }) =>
-  api<Category>("/admin/categories", { method: "POST", body: JSON.stringify(payload) });
-export const updateCategory = (id: string, payload: { name?: string; description?: string }) =>
-  api<Category>(`/admin/categories/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
-export type PropertyPayload = { title: string; description: string; location: string; address?: string; rentAmount: number; bedrooms?: number; bathrooms?: number; areaSqft?: number; amenities?: string[]; images?: string[]; categoryId: string; status?: PropertyStatus };
+export const createCategory = (payload: {
+  name: string;
+  description?: string;
+}) =>
+  api<Category>("/admin/categories", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+export const updateCategory = (
+  id: string,
+  payload: { name?: string; description?: string },
+) =>
+  api<Category>(`/admin/categories/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+export type PropertyPayload = {
+  title: string;
+  description: string;
+  location: string;
+  address?: string;
+  rentAmount: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  areaSqft?: number;
+  amenities?: string[];
+  images?: string[];
+  categoryId: string;
+  status?: PropertyStatus;
+};
 export const createProperty = (payload: PropertyPayload) =>
-  api<Property>("/landlord/properties", { method: "POST", body: JSON.stringify(payload) });
+  api<Property>("/landlord/properties", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 export const updateProperty = (id: string, payload: Partial<PropertyPayload>) =>
-  api<Property>(`/landlord/properties/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-export const deleteProperty = (id: string) => api<null>(`/landlord/properties/${id}`, { method: "DELETE" });
-export const createRentalRequest = (payload: { propertyId: string; message?: string; moveInDate?: string; durationMonths?: number }) =>
-  api<RentalRequest>("/rentals", { method: "POST", body: JSON.stringify(payload) });
-export const cancelRentalRequest = (id: string) => api<RentalRequest>(`/rentals/${id}/cancel`, { method: "PATCH" });
-export const updateLandlordRequest = (id: string, status: "APPROVED" | "REJECTED") =>
-  api<RentalRequest>(`/landlord/requests/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+  api<Property>(`/landlord/properties/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+export const deleteProperty = (id: string) =>
+  api<null>(`/landlord/properties/${id}`, { method: "DELETE" });
+export const createRentalRequest = (payload: {
+  propertyId: string;
+  message?: string;
+  moveInDate?: string;
+  durationMonths?: number;
+}) =>
+  api<RentalRequest>("/rentals", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+export const cancelRentalRequest = (id: string) =>
+  api<RentalRequest>(`/rentals/${id}/cancel`, { method: "PATCH" });
+export const updateLandlordRequest = (
+  id: string,
+  status: "APPROVED" | "REJECTED",
+) =>
+  api<RentalRequest>(`/landlord/requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 export const createPayment = (payload: {
   rentalRequestId: string;
   provider: "STRIPE" | "SSLCOMMERZ";
@@ -233,18 +290,53 @@ export const createPayment = (payload: {
   successUrl?: string;
   cancelUrl?: string;
 }) =>
-  api<Payment | PaymentCheckoutResponse>("/payments/create", { method: "POST", body: JSON.stringify(payload) });
-export const confirmPayment = (payload: { paymentId?: string; transactionId?: string; status: PaymentStatus; gatewayResponse?: Record<string, unknown> }) =>
-  api<Payment>("/payments/confirm", { method: "POST", body: JSON.stringify(payload) });
-export const createReview = (payload: { rentalRequestId: string; rating: number; comment?: string }) =>
+  api<Payment | PaymentCheckoutResponse>("/payments/create", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+export const confirmPayment = (payload: {
+  paymentId?: string;
+  transactionId?: string;
+  status: PaymentStatus;
+  gatewayResponse?: Record<string, unknown>;
+}) =>
+  api<Payment>("/payments/confirm", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+export const createReview = (payload: {
+  rentalRequestId: string;
+  rating: number;
+  comment?: string;
+}) =>
   api<Review>("/reviews", { method: "POST", body: JSON.stringify(payload) });
-export const updateReview = (id: string, payload: { rating?: number; comment?: string }) =>
-  api<Review>(`/reviews/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
-export const deleteReview = (id: string) => api<Review>(`/reviews/${id}`, { method: "DELETE" });
-export const updateUserStatus = (id: string, activeStatus: "ACTIVE" | "BLOCKED") =>
-  api<User>(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ activeStatus }) });
+export const updateReview = (
+  id: string,
+  payload: { rating?: number; comment?: string },
+) =>
+  api<Review>(`/reviews/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+export const deleteReview = (id: string) =>
+  api<Review>(`/reviews/${id}`, { method: "DELETE" });
+export const updateUserStatus = (
+  id: string,
+  activeStatus: "ACTIVE" | "BLOCKED",
+) =>
+  api<User>(`/admin/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ activeStatus }),
+  });
 export const updateAdminPropertyStatus = (id: string, status: PropertyStatus) =>
-  api<Property>(`/admin/properties/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
+  api<Property>(`/admin/properties/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 export const updateAdminRentalStatus = (id: string, status: RentalStatus) =>
-  api<RentalRequest>(`/admin/rentals/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) });
-export const deleteAdminReview = (id: string) => api<Review>(`/admin/reviews/${id}`, { method: "DELETE" });
+  api<RentalRequest>(`/admin/rentals/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+export const deleteAdminReview = (id: string) =>
+  api<Review>(`/admin/reviews/${id}`, { method: "DELETE" });

@@ -2,6 +2,64 @@ import Link from "next/link";
 import { ArrowUpRight, Instagram, Mail, Twitter } from "lucide-react";
 import { PublicHeader } from "../../components/PublicHeader";
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  return <><PublicHeader />{children}<footer className="modern-footer"><div className="footer-top"><div className="footer-brand"><Link href="/" className="brand"><span>R</span> RentNest</Link><p>A calmer way to find a place, connect with people, and feel at home.</p><div className="footer-socials"><a href="#" aria-label="Instagram"><Instagram size={16} /></a><a href="#" aria-label="Twitter"><Twitter size={16} /></a><a href="mailto:hello@rentnest.com" aria-label="Email"><Mail size={16} /></a></div></div><div className="footer-links"><div><strong>Explore</strong><Link href="/properties">Find a home</Link><Link href="/register">Get started</Link><Link href="/login">Log in</Link></div><div><strong>For landlords</strong><Link href="/register">List a property</Link><Link href="/login">Manage listings</Link></div><div><strong>Company</strong><a href="mailto:hello@rentnest.com">Contact us</a><a href="mailto:support@rentnest.com">Support</a><Link href="/">Our promise <ArrowUpRight size={13} /></Link></div></div></div><div className="footer-bottom"><span>© 2026 RentNest. Made for better beginnings.</span><span>Simple renting, thoughtful living.</span></div></footer></>;
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <PublicHeader />
+      {children}
+      <footer className="modern-footer">
+        <div className="footer-top">
+          <div className="footer-brand">
+            <Link href="/" className="brand">
+              <span>R</span> RentNest
+            </Link>
+            <p>
+              A calmer way to find a place, connect with people, and feel at
+              home.
+            </p>
+            <div className="footer-socials">
+              <a href="#" aria-label="Instagram">
+                <Instagram size={16} />
+              </a>
+              <a href="#" aria-label="Twitter">
+                <Twitter size={16} />
+              </a>
+              <a href="mailto:hello@rentnest.com" aria-label="Email">
+                <Mail size={16} />
+              </a>
+            </div>
+          </div>
+          <div className="footer-links">
+            <div>
+              <strong>Explore</strong>
+              <Link href="/properties">Find a home</Link>
+              <Link href="/register">Get started</Link>
+              <Link href="/login">Log in</Link>
+            </div>
+            <div>
+              <strong>For landlords</strong>
+              <Link href="/register">List a property</Link>
+              <Link href="/login">Manage listings</Link>
+            </div>
+            <div>
+              <strong>Company</strong>
+              <a href="mailto:hello@rentnest.com">Contact us</a>
+              <a href="mailto:support@rentnest.com">Support</a>
+              <Link href="/">
+                Our promise <ArrowUpRight size={13} />
+              </Link>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <span>© 2026 RentNest. Made for better beginnings.</span>
+          <span>Simple renting, thoughtful living.</span>
+        </div>
+      </footer>
+    </>
+  );
 }

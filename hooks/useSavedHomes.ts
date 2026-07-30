@@ -12,13 +12,17 @@ export function useSavedHomes() {
   useEffect(() => {
     refresh();
     window.addEventListener("rentnest:saved-homes-updated", refresh);
-    return () => window.removeEventListener("rentnest:saved-homes-updated", refresh);
+    return () =>
+      window.removeEventListener("rentnest:saved-homes-updated", refresh);
   }, [refresh]);
 
-  const toggle = useCallback((property: Property) => {
-    toggleSavedHome(property);
-    refresh();
-  }, [refresh]);
+  const toggle = useCallback(
+    (property: Property) => {
+      toggleSavedHome(property);
+      refresh();
+    },
+    [refresh],
+  );
 
   return { homes, count: homes.length, isSaved: isHomeSaved, toggle, refresh };
 }
