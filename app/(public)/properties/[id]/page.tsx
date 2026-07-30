@@ -21,6 +21,7 @@ export default function PropertyDetails() {
   const [duration, setDuration] = useState("12");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [isTenant, setIsTenant] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [showReviews, setShowReviews] = useState(false);
@@ -48,8 +49,10 @@ export default function PropertyDetails() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (submitting) return;
     setError("");
     setSuccess("");
+    setSubmitting(true);
     try {
       await createRentalRequest({
         propertyId: id,
@@ -60,6 +63,8 @@ export default function PropertyDetails() {
       setMessage("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to submit request");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -266,7 +271,9 @@ export default function PropertyDetails() {
                 onChange={(event) => setDuration(event.target.value)}
                 aria-label="Duration in months"
               />
-              <button className="button">Send rental request</button>
+              <button className="button" type="submit" disabled={submitting}>
+                {submitting ? "Sending request…" : "Send rental request"}
+              </button>
               {success && <p className="success-message">{success}</p>}
               {error && <p className="form-error">{error}</p>}
             </form>

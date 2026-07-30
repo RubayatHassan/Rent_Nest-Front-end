@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -20,50 +20,30 @@ export default function HomePage() {
   const [homes, setHomes] = useState<Property[]>([]);
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const skipInitialSearch = useRef(true);
 
   useEffect(() => {
-    getProperties("limit=6")
+    getProperties("limit=100")
       .then((result) =>
         setHomes(Array.isArray(result?.data) ? result.data : []),
       )
-      .catch(() => setHomes([]));
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Unable to load homes"),
+      );
   }, []);
 
-  useEffect(() => {
-    if (skipInitialSearch.current) {
-      skipInitialSearch.current = false;
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      const term = search.trim();
-      const params = new URLSearchParams({ limit: "6" });
-      if (term) params.set("searchTerm", term);
-
-      getProperties(params.toString())
-        .then((result) => {
-          setQuery(term);
-          setHomes(Array.isArray(result?.data) ? result.data : []);
-        })
-        .catch(() => {
-          setQuery(term);
-          setHomes([]);
-        });
-    }, 1000);
-
-    return () => window.clearTimeout(timer);
-  }, [search]);
-
   const visibleHomes = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    return term
+    const term = search.trim().toLowerCase();
+    const matches = term
       ? homes.filter((home) =>
-          `${home.title} ${home.location}`.toLowerCase().includes(term),
+          `${home.title} ${home.location} ${home.address || ""} ${home.category?.name || ""}`
+            .toLowerCase()
+            .includes(term),
         )
-      : homes.slice(0, 3);
-  }, [homes, query]);
+      : homes;
+    return matches.slice(0, 3);
+  }, [homes, search]);
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
@@ -105,7 +85,10 @@ export default function HomePage() {
             <MapPin size={18} />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setQuery(event.target.value.trim());
+              }}
               placeholder="Search by city or neighborhood"
               aria-label="Search by city or neighborhood"
             />
@@ -180,7 +163,9 @@ export default function HomePage() {
             View all homes <ArrowRight size={15} />
           </Link>
         </div>
-        {visibleHomes.length ? (
+        {error ? (
+          <p className="form-error">{error}</p>
+        ) : visibleHomes.length ? (
           <div className="property-grid">
             {visibleHomes.map((home, index) => (
               <Link

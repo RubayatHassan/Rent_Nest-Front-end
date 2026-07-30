@@ -91,7 +91,45 @@ export type Meta = {
 };
 export type ListResponse<T> = { data: T[]; meta?: Meta };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+// Route browser requests through Next.js so live backend cookies remain
+// same-origin from the browser's point of view.
+const API_URL =
+  typeof window !== "undefined"
+    ? "/backend-api"
+    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const DIRECT_API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const ACCESS_TOKEN_KEY = "rentnest.accessToken";
+let currentUserRequest: Promise<User> | null = null;
+
+function getStoredAccessToken() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(ACCESS_TOKEN_KEY) || "";
+}
+
+function storeAccessToken(token?: string) {
+  if (typeof window === "undefined") return;
+  if (token) window.localStorage.setItem(ACCESS_TOKEN_KEY, token);
+  else window.localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+async function fetchApi(path: string, options: RequestInit) {
+  try {
+    const response = await fetch(`${API_URL}${path}`, options);
+    if (
+      API_URL !== DIRECT_API_URL &&
+      [404, 502, 503, 504].includes(response.status)
+    ) {
+      return fetch(`${DIRECT_API_URL}${path}`, options);
+    }
+    return response;
+  } catch (error) {
+    if (API_URL !== DIRECT_API_URL) {
+      return fetch(`${DIRECT_API_URL}${path}`, options);
+    }
+    throw error;
+  }
+}
 
 function formatApiError(body: unknown) {
   if (typeof body === "string" && body.trim()) return body;
@@ -131,32 +169,39 @@ export async function api<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  let response = await fetch(`${API_URL}${path}`, {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+  const accessToken = getStoredAccessToken();
+  const requestOptions = {
     ...options,
+    signal: controller.signal,
     credentials: "include",
     cache: "no-store",
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-  });
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(options.headers || {}),
+    },
+  } satisfies RequestInit;
+  let response = await fetchApi(path, requestOptions);
 
-  if (response.status === 401 && path !== "/auth/refresh-token") {
-    const refreshResponse = await fetch(`${API_URL}/auth/refresh-token`, {
+  const method = (options.method || "GET").toUpperCase();
+  if (
+    response.status === 401 &&
+    method === "GET" &&
+    path !== "/auth/refresh-token"
+  ) {
+    const refreshResponse = await fetchApi("/auth/refresh-token", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
     });
     if (refreshResponse.ok) {
-      response = await fetch(`${API_URL}${path}`, {
-        ...options,
-        credentials: "include",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          ...(options.headers || {}),
-        },
-      });
+      response = await fetchApi(path, requestOptions);
     }
   }
 
+  clearTimeout(timeout);
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(formatApiError(body));
   // The backend returns pagination metadata beside `data`. Preserve it for
@@ -165,24 +210,52 @@ export async function api<T>(
   return (body.meta ? { data: body.data, meta: body.meta } : body.data) as T;
 }
 
-export const getMe = () => api<User>("/auth/me");
+export const getMe = () => {
+  if (!currentUserRequest) {
+    currentUserRequest = api<User>("/auth/me").finally(() => {
+      currentUserRequest = null;
+    });
+  }
+  return currentUserRequest;
+};
 export const login = (payload: { email: string; password: string }) =>
-  api<{ id: string; name: string; email: string; role: Role }>("/auth/login", {
+  api<{
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+    accessToken?: string;
+  }>("/auth/login", {
     method: "POST",
     body: JSON.stringify(payload),
+  }).then((result) => {
+    storeAccessToken(result.accessToken);
+    return result;
   });
-export const logout = () => api<null>("/auth/logout", { method: "POST" });
+export const logout = () =>
+  api<null>("/auth/logout", { method: "POST" }).finally(() => {
+    storeAccessToken();
+    currentUserRequest = null;
+  });
 export const refreshToken = () =>
-  api<{ message?: string }>("/auth/refresh-token", { method: "POST" });
+  api<{ accessToken?: string; message?: string }>("/auth/refresh-token", {
+    method: "POST",
+  }).then((result) => {
+    storeAccessToken(result.accessToken);
+    return result;
+  });
 export const register = (payload: {
   name: string;
   email: string;
   password: string;
   role: Role;
 }) =>
-  api<{ user: User }>("/auth/register", {
+  api<{ user: User; accessToken?: string }>("/auth/register", {
     method: "POST",
     body: JSON.stringify(payload),
+  }).then((result) => {
+    storeAccessToken(result.accessToken);
+    return result;
   });
 export const getProperties = (query = "") =>
   api<ListResponse<Property> | Property[]>(

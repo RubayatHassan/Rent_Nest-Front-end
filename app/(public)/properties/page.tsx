@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   getCategories,
   getProperties,
@@ -14,19 +14,11 @@ export default function PropertiesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [query, setQuery] = useState({ searchTerm: "", categoryId: "" });
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState("");
-  const skipInitialSearch = useRef(true);
-  const pageRef = useRef(page);
-  const load = (nextPage = page, nextQuery = query) => {
-    const params = new URLSearchParams({ page: String(nextPage), limit: "6" });
-    if (nextQuery.searchTerm.trim())
-      params.set("searchTerm", nextQuery.searchTerm.trim());
-    if (nextQuery.categoryId) params.set("categoryId", nextQuery.categoryId);
-    getProperties(params.toString())
+  const load = () => {
+    getProperties("limit=100")
       .then((result) => {
         setHomes(Array.isArray(result?.data) ? result.data : []);
-        setTotalPages(result.meta?.totalPages || 1);
       })
       .catch((err) =>
         setError(
@@ -42,28 +34,22 @@ export default function PropertiesPage() {
       .catch(() => undefined);
   }, []);
   useEffect(() => {
-    pageRef.current = page;
-  }, [page]);
-  useEffect(() => {
     load();
-  }, [page]);
-  useEffect(() => {
-    if (skipInitialSearch.current) {
-      skipInitialSearch.current = false;
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      const nextQuery = { ...query };
-      if (pageRef.current === 1) {
-        load(1, nextQuery);
-      } else {
-        setPage(1);
-      }
-    }, 1000);
-
-    return () => window.clearTimeout(timer);
-  }, [query.searchTerm]);
+  }, []);
+  const filteredHomes = useMemo(() => {
+    const term = query.searchTerm.trim().toLowerCase();
+    return homes.filter((home) => {
+      const matchesSearch = !term ||
+        `${home.title} ${home.location} ${home.address || ""} ${home.category?.name || ""}`
+          .toLowerCase()
+          .includes(term);
+      const matchesCategory =
+        !query.categoryId || home.category?.id === query.categoryId;
+      return matchesSearch && matchesCategory;
+    });
+  }, [homes, query]);
+  const totalPages = Math.max(1, Math.ceil(filteredHomes.length / 6));
+  const visibleHomes = filteredHomes.slice((page - 1) * 6, page * 6);
   const search = (event: FormEvent) => {
     event.preventDefault();
     document
@@ -92,9 +78,10 @@ export default function PropertiesPage() {
       >
         <input
           value={query.searchTerm}
-          onChange={(event) =>
-            setQuery({ ...query, searchTerm: event.target.value })
-          }
+          onChange={(event) => {
+            setQuery({ ...query, searchTerm: event.target.value });
+            setPage(1);
+          }}
           placeholder="Search location or property..."
         />
         <select
@@ -103,7 +90,6 @@ export default function PropertiesPage() {
             const nextQuery = { ...query, categoryId: event.target.value };
             setQuery(nextQuery);
             setPage(1);
-            load(1, nextQuery);
           }}
         >
           <option value="">All categories</option>
@@ -119,7 +105,7 @@ export default function PropertiesPage() {
         <p className="form-error">{error}</p>
       ) : (
         <div className="property-grid">
-          {homes.map((home, i) => (
+          {visibleHomes.map((home, i) => (
             <Link
               href={`/properties/${home.id}`}
               className="property-card"
