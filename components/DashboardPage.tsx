@@ -2,12 +2,14 @@
 import Link from "next/link";
 import {
   ArrowUpRight,
+  Bookmark,
   CreditCard,
   Home,
   Users,
   CalendarDays,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSavedHomes } from "../hooks/useSavedHomes";
 import {
   getAdminPayments,
   getAdminProperties,
@@ -23,6 +25,7 @@ import {
 export function DashboardPage({ role }: { role: Role }) {
   const isAdmin = role === "ADMIN";
   const isLandlord = role === "LANDLORD";
+  const { count: savedHomesCount } = useSavedHomes();
   const [counts, setCounts] = useState({
     users: 0,
     properties: 0,
@@ -140,6 +143,13 @@ export function DashboardPage({ role }: { role: Role }) {
           },
         ]
       : [
+          {
+            label: "Saved homes",
+            value: savedHomesCount.toLocaleString(),
+            change: "Your shortlist",
+            icon: Bookmark,
+            href: "/user-dashboard/saved-homes",
+          },
           {
             label: "Reviewed homes",
             value: counts.reviewedHomes.toLocaleString(),

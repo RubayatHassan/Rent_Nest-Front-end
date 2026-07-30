@@ -22,6 +22,7 @@ export default function PropertyDetails() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isTenant, setIsTenant] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [showReviews, setShowReviews] = useState(false);
   const { isSaved, toggle: toggleSaved } = useSavedHomes();
 
@@ -35,8 +36,14 @@ export default function PropertyDetails() {
           ),
         );
     getMe()
-      .then((user) => setIsTenant(user.role === "TENANT"))
-      .catch(() => setIsTenant(false));
+      .then((user) => {
+        setIsAuthenticated(true);
+        setIsTenant(user.role === "TENANT");
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+        setIsTenant(false);
+      });
   }, [id]);
 
   const submit = async (event: FormEvent) => {
@@ -145,14 +152,16 @@ export default function PropertyDetails() {
           <div className="price detail-price">
             <strong>{money(property.rentAmount)}</strong>
             <span>per month</span>
-            <button
-              type="button"
-              className={`save-home-button ${saved ? "saved" : ""}`}
-              onClick={() => toggleSaved(property)}
-            >
-              <Bookmark size={16} fill={saved ? "currentColor" : "none"} />{" "}
-              {saved ? "Saved" : "Save home"}
-            </button>
+            {isAuthenticated === true && isTenant && (
+              <button
+                type="button"
+                className={`save-home-button ${saved ? "saved" : ""}`}
+                onClick={() => toggleSaved(property)}
+              >
+                <Bookmark size={16} fill={saved ? "currentColor" : "none"} />{" "}
+                {saved ? "Saved" : "Save home"}
+              </button>
+            )}
           </div>
           <div className="panel property-facts">
             <div
@@ -232,6 +241,11 @@ export default function PropertyDetails() {
               </div>
             )}
           </div>
+          {isAuthenticated === false && (
+            <Link href="/login" className="button">
+              Book this property
+            </Link>
+          )}
           {isTenant && (
             <form className="panel" onSubmit={submit}>
               <h2>Request this property</h2>
@@ -241,13 +255,15 @@ export default function PropertyDetails() {
                 placeholder="Write a message to the landlord"
                 required
               />
+              <label htmlFor="duration-months">Duration (months)</label>
               <input
+                id="duration-months"
                 type="number"
                 min="1"
                 max="60"
                 value={duration}
                 onChange={(event) => setDuration(event.target.value)}
-                placeholder="Duration in months"
+                aria-label="Duration in months"
               />
               <button className="button">Send rental request</button>
               {success && <p className="success-message">{success}</p>}
