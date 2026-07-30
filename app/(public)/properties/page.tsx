@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   getCategories,
   getProperties,
@@ -16,6 +16,8 @@ export default function PropertiesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState("");
+  const skipInitialSearch = useRef(true);
+  const pageRef = useRef(page);
   const load = (nextPage = page, nextQuery = query) => {
     const params = new URLSearchParams({ page: String(nextPage), limit: "6" });
     if (nextQuery.searchTerm.trim())
@@ -40,12 +42,33 @@ export default function PropertiesPage() {
       .catch(() => undefined);
   }, []);
   useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+  useEffect(() => {
     load();
   }, [page]);
+  useEffect(() => {
+    if (skipInitialSearch.current) {
+      skipInitialSearch.current = false;
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const nextQuery = { ...query };
+      if (pageRef.current === 1) {
+        load(1, nextQuery);
+      } else {
+        setPage(1);
+      }
+    }, 2000);
+
+    return () => window.clearTimeout(timer);
+  }, [query.searchTerm]);
   const search = (event: FormEvent) => {
     event.preventDefault();
-    setPage(1);
-    load(1, query);
+    document
+      .querySelector(".property-grid")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const pageNumbers = Array.from(
     { length: totalPages },

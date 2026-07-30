@@ -24,7 +24,7 @@ export default function HomePage() {
   const skipInitialSearch = useRef(true);
 
   useEffect(() => {
-    getProperties("limit=100")
+    getProperties("limit=6")
       .then((result) =>
         setHomes(Array.isArray(result?.data) ? result.data : []),
       )
@@ -39,7 +39,7 @@ export default function HomePage() {
 
     const timer = window.setTimeout(() => {
       const term = search.trim();
-      const params = new URLSearchParams({ limit: "100" });
+      const params = new URLSearchParams({ limit: "6" });
       if (term) params.set("searchTerm", term);
 
       getProperties(params.toString())
@@ -62,7 +62,7 @@ export default function HomePage() {
       ? homes.filter((home) =>
           `${home.title} ${home.location}`.toLowerCase().includes(term),
         )
-      : homes;
+      : homes.slice(0, 3);
   }, [homes, query]);
 
   const submitSearch = (event: FormEvent) => {
