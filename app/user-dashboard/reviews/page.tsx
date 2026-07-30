@@ -192,7 +192,7 @@ export default function Page() {
                         setDraft({ ...draft, comment: event.target.value })
                       }
                       rows={4}
-                      required
+                      maxLength={2000}
                     />
                     <div className="review-actions">
                       <button

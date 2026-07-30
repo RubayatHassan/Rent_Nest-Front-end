@@ -155,6 +155,7 @@ export default function Page() {
               <input
                 id="category-name"
                 required
+                maxLength={100}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="e.g. Apartments, Studios"
@@ -168,6 +169,7 @@ export default function Page() {
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="Add a short description for this category"
                 rows={4}
+                maxLength={1000}
               />
               <button className="button category-submit">
                 {editingId ? "Update category →" : "Create category →"}

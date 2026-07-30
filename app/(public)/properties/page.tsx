@@ -60,7 +60,7 @@ export default function PropertiesPage() {
       } else {
         setPage(1);
       }
-    }, 2000);
+    }, 1000);
 
     return () => window.clearTimeout(timer);
   }, [query.searchTerm]);

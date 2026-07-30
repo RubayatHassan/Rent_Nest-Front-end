@@ -260,7 +260,8 @@ export default function PropertyDetails() {
                 id="duration-months"
                 type="number"
                 min="1"
-                max="60"
+                max="120"
+                step="1"
                 value={duration}
                 onChange={(event) => setDuration(event.target.value)}
                 aria-label="Duration in months"

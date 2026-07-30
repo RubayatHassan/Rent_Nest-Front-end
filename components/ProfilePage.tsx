@@ -33,7 +33,7 @@ export function ProfilePage() {
       const user = await getMyProfile();
       setProfile(user);
       setForm({
-        phone: (user.phone || "").replace(/\D/g, "").slice(0, 11),
+        phone: user.phone || "",
         address: user.address || "",
         profilePhoto: user.profilePhoto || "",
       });
@@ -179,23 +179,23 @@ export function ProfilePage() {
             Mobile number
             <input
               type="tel"
-              inputMode="numeric"
-              maxLength={11}
+              maxLength={30}
               value={form.phone}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  phone: e.target.value.replace(/\D/g, "").slice(0, 11),
+                  phone: e.target.value,
                 })
               }
               placeholder="11 digit mobile number"
             />
-            <span className="field-hint">Maximum 11 digits.</span>
+            <span className="field-hint">Maximum 30 characters.</span>
           </label>
           <label>
             Address
             <textarea
               value={form.address}
+              maxLength={255}
               onChange={(e) => setForm({ ...form, address: e.target.value })}
               placeholder="Your address"
             />

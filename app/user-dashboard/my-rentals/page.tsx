@@ -291,7 +291,7 @@ export default function Page() {
                           }
                           placeholder="Tell us what made this home feel right…"
                           rows={4}
-                          required
+                          maxLength={2000}
                         />
                         <div className="review-actions">
                           <button

@@ -78,6 +78,7 @@ export default function Page() {
           onChange={(event) => setName(event.target.value)}
           placeholder="e.g. Apartments, Studios"
           required
+          maxLength={100}
         />
         <label htmlFor="category-description">
           Description <span>(optional)</span>
@@ -88,6 +89,7 @@ export default function Page() {
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Add a short description for this category"
           rows={4}
+          maxLength={1000}
         />
         <button className="button category-submit" disabled={saving}>
           {saving ? "Creating…" : "Create category →"}

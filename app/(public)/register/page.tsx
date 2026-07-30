@@ -46,6 +46,7 @@ export default function RegisterPage() {
               name="name"
               required
               minLength={2}
+              maxLength={100}
               placeholder="Name is sensitive and cannot be changed later"
             />
           </div>
@@ -64,6 +65,7 @@ export default function RegisterPage() {
               name="password"
               type="password"
               required
+              maxLength={128}
               minLength={6}
               placeholder="At least 6 characters"
             />

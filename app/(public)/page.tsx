@@ -51,7 +51,7 @@ export default function HomePage() {
           setQuery(term);
           setHomes([]);
         });
-    }, 2000);
+    }, 1000);
 
     return () => window.clearTimeout(timer);
   }, [search]);

@@ -186,12 +186,16 @@ export default function Page() {
             <form onSubmit={submit}>
               <input
                 required
+                minLength={2}
+                maxLength={200}
                 placeholder="Title"
                 value={form.title}
                 onChange={(event) => setField("title", event.target.value)}
               />
               <textarea
                 required
+                minLength={10}
+                maxLength={5000}
                 placeholder="Description"
                 value={form.description}
                 onChange={(event) =>
@@ -200,19 +204,23 @@ export default function Page() {
               />
               <input
                 required
+                minLength={2}
+                maxLength={200}
                 placeholder="Location"
                 value={form.location}
                 onChange={(event) => setField("location", event.target.value)}
               />
               <input
                 placeholder="Full address"
+                maxLength={255}
                 value={form.address}
                 onChange={(event) => setField("address", event.target.value)}
               />
               <input
                 required
                 type="number"
-                min="0"
+                min="0.01"
+                step="any"
                 placeholder="Monthly rent"
                 value={form.rentAmount}
                 onChange={(event) => setField("rentAmount", event.target.value)}
@@ -232,6 +240,7 @@ export default function Page() {
               <input
                 type="number"
                 min="0"
+                step="1"
                 placeholder="Bedrooms"
                 value={form.bedrooms}
                 onChange={(event) => setField("bedrooms", event.target.value)}
@@ -239,13 +248,15 @@ export default function Page() {
               <input
                 type="number"
                 min="0"
+                step="1"
                 placeholder="Bathrooms"
                 value={form.bathrooms}
                 onChange={(event) => setField("bathrooms", event.target.value)}
               />
               <input
                 type="number"
-                min="0"
+                min="0.01"
+                step="any"
                 placeholder="Area (sq ft)"
                 value={form.areaSqft}
                 onChange={(event) => setField("areaSqft", event.target.value)}

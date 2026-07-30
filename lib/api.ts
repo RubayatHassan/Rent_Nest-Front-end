@@ -94,24 +94,34 @@ export type ListResponse<T> = { data: T[]; meta?: Meta };
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 function formatApiError(body: unknown) {
+  if (typeof body === "string" && body.trim()) return body;
   if (!body || typeof body !== "object") return "Something went wrong";
   const payload = body as Record<string, unknown>;
-  const values = [payload.message, payload.issues, payload.errors];
+  // Backend Zod errors are returned as one comma-separated `message` string.
+  if (typeof payload.message === "string" && payload.message.trim()) {
+    return payload.message;
+  }
+  if (
+    payload.error &&
+    typeof payload.error === "object" &&
+    typeof (payload.error as { message?: unknown }).message === "string"
+  ) {
+    return (payload.error as { message: string }).message;
+  }
+  const values = [payload.issues, payload.errors, payload.error];
   const messages = values.flatMap((value) => {
-    if (!Array.isArray(value)) return typeof value === "string" ? [value] : [];
-    return value.map((item) => {
-      if (typeof item === "string") return item;
-      if (item && typeof item === "object" && "message" in item) {
-        const issue = item as { message?: unknown; path?: unknown };
-        const message =
-          typeof issue.message === "string" ? issue.message : "Invalid value";
-        const path =
-          Array.isArray(issue.path) && issue.path.length
-            ? `${issue.path.join(".")}: `
-            : "";
-        return `${path}${message}`;
-      }
-      return "Invalid value";
+    if (typeof value === "string") return value.trim() ? [value] : [];
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((item) => {
+      if (typeof item === "string") return [item];
+      if (!item || typeof item !== "object") return [];
+      const issue = item as { message?: unknown; path?: unknown };
+      if (typeof issue.message !== "string") return [];
+      const path =
+        Array.isArray(issue.path) && issue.path.length
+          ? `${issue.path.join(".")}: `
+          : "";
+      return [`${path}${issue.message}`];
     });
   });
   return [...new Set(messages)].join("\n") || "Something went wrong";
@@ -297,7 +307,8 @@ export const createPayment = (payload: {
 export const confirmPayment = (payload: {
   paymentId?: string;
   transactionId?: string;
-  status: PaymentStatus;
+  stripeSessionId?: string;
+  status?: PaymentStatus;
   gatewayResponse?: Record<string, unknown>;
 }) =>
   api<Payment>("/payments/confirm", {
