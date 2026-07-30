@@ -22,6 +22,43 @@ import {
   Role,
 } from "../lib/api";
 
+type Activity = {
+  title: string;
+  description: string;
+  timestamp?: string;
+  tone: "green" | "blue" | "orange";
+};
+
+function itemTimestamp(item: unknown) {
+  if (!item || typeof item !== "object") return undefined;
+  const record = item as { createdAt?: string; updatedAt?: string };
+  return record.createdAt || record.updatedAt;
+}
+
+function formatActivityTime(timestamp?: string) {
+  if (!timestamp) return "Recent";
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "Recent";
+  const days = Math.floor((Date.now() - date.getTime()) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return date.toLocaleDateString("en-BD", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function recentActivities(items: Activity[]) {
+  return items
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp || 0).getTime() -
+        new Date(a.timestamp || 0).getTime(),
+    )
+    .slice(0, 3);
+}
+
 export function DashboardPage({ role }: { role: Role }) {
   const isAdmin = role === "ADMIN";
   const isLandlord = role === "LANDLORD";
@@ -33,6 +70,7 @@ export function DashboardPage({ role }: { role: Role }) {
     payments: 0,
     reviewedHomes: 0,
   });
+  const [activities, setActivities] = useState<Activity[]>([]);
   useEffect(() => {
     const load = async () => {
       try {
@@ -53,6 +91,35 @@ export function DashboardPage({ role }: { role: Role }) {
             ),
             reviewedHomes: 0,
           });
+          setActivities(
+            recentActivities([
+              ...users.data.map((user) => ({
+                title: `New ${user.role.toLowerCase()} registered`,
+                description: `${user.name} joined the marketplace`,
+                timestamp: itemTimestamp(user),
+                tone: "green" as const,
+              })),
+              ...properties.data.map((property) => ({
+                title: "New property listed",
+                description: property.title,
+                timestamp: itemTimestamp(property),
+                tone: "blue" as const,
+              })),
+              ...rentals.data.map((rental) => ({
+                title: `Rental request ${rental.status.toLowerCase()}`,
+                description:
+                  rental.property?.title || rental.tenant?.name || "Rental request",
+                timestamp: itemTimestamp(rental),
+                tone: "orange" as const,
+              })),
+              ...payments.data.map((payment) => ({
+                title: `Payment ${payment.status.toLowerCase()}`,
+                description: `${payment.provider} · ৳${Number(payment.amount || 0).toLocaleString("en-BD")}`,
+                timestamp: itemTimestamp(payment),
+                tone: "green" as const,
+              })),
+            ]),
+          );
         } else if (isLandlord) {
           const [properties, rentals] = await Promise.all([
             getMyProperties(),
@@ -65,6 +132,23 @@ export function DashboardPage({ role }: { role: Role }) {
             payments: rentals.filter((item) => item.status === "ACTIVE").length,
             reviewedHomes: 0,
           });
+          setActivities(
+            recentActivities([
+              ...properties.data.map((property) => ({
+                title: "Property listed",
+                description: property.title,
+                timestamp: itemTimestamp(property),
+                tone: "blue" as const,
+              })),
+              ...rentals.map((rental) => ({
+                title: `Rental request ${rental.status.toLowerCase()}`,
+                description:
+                  rental.property?.title || rental.tenant?.name || "Rental request",
+                timestamp: itemTimestamp(rental),
+                tone: "orange" as const,
+              })),
+            ]),
+          );
         } else {
           const [rentals, payments] = await Promise.all([
             getMyRentals(),
@@ -81,6 +165,22 @@ export function DashboardPage({ role }: { role: Role }) {
             reviewedHomes: rentals.filter((item) => Boolean(item.review))
               .length,
           });
+          setActivities(
+            recentActivities([
+              ...rentals.map((rental) => ({
+                title: `Rental ${rental.status.toLowerCase()}`,
+                description: rental.property?.title || "Your rental request",
+                timestamp: itemTimestamp(rental),
+                tone: "blue" as const,
+              })),
+              ...payments.map((payment) => ({
+                title: `Payment ${payment.status.toLowerCase()}`,
+                description: `${payment.provider} · ৳${Number(payment.amount || 0).toLocaleString("en-BD")}`,
+                timestamp: itemTimestamp(payment),
+                tone: "green" as const,
+              })),
+            ]),
+          );
         }
       } catch {
         setCounts({
@@ -90,6 +190,7 @@ export function DashboardPage({ role }: { role: Role }) {
           payments: 0,
           reviewedHomes: 0,
         });
+        setActivities([]);
       }
     };
     load();
@@ -215,6 +316,21 @@ export function DashboardPage({ role }: { role: Role }) {
             </Link>
           </div>
           <div className="activity-list">
+            {activities.length ? (
+              activities.map((activity) => (
+                <div key={`${activity.title}-${activity.timestamp || activity.description}`}>
+                  <span className={`activity-dot ${activity.tone}`} />
+                  <div>
+                    <b>{activity.title}</b>
+                    <p>{activity.description}</p>
+                  </div>
+                  <em>{formatActivityTime(activity.timestamp)}</em>
+                </div>
+              ))
+            ) : (
+              <p className="muted">No recent activity yet.</p>
+            )}
+            {false && <>
             <div>
               <span className="activity-dot green" />
               <div>
@@ -257,6 +373,7 @@ export function DashboardPage({ role }: { role: Role }) {
               </div>
               <em>2 days ago</em>
             </div>
+            </>}
           </div>
         </div>
         <div className="panel welcome-panel">

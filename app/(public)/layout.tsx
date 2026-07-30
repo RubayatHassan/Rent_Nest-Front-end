@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowUpRight, Instagram, Mail, Twitter } from "lucide-react";
 import { PublicHeader } from "../../components/PublicHeader";
 
@@ -7,11 +10,14 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const showFooter = pathname !== "/login" && pathname !== "/register";
+
   return (
     <>
       <PublicHeader />
       {children}
-      <footer className="modern-footer">
+      {showFooter && <footer className="modern-footer">
         <div className="footer-top">
           <div className="footer-brand">
             <Link href="/" className="brand">
@@ -59,7 +65,7 @@ export default function PublicLayout({
           <span>© 2026 RentNest. Made for better beginnings.</span>
           <span>Simple renting, thoughtful living.</span>
         </div>
-      </footer>
+      </footer>}
     </>
   );
 }
