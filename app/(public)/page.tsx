@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -21,14 +21,40 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const skipInitialSearch = useRef(true);
 
   useEffect(() => {
-    getProperties("limit=6")
+    getProperties("limit=100")
       .then((result) =>
         setHomes(Array.isArray(result?.data) ? result.data : []),
       )
       .catch(() => setHomes([]));
   }, []);
+
+  useEffect(() => {
+    if (skipInitialSearch.current) {
+      skipInitialSearch.current = false;
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const term = search.trim();
+      const params = new URLSearchParams({ limit: "100" });
+      if (term) params.set("searchTerm", term);
+
+      getProperties(params.toString())
+        .then((result) => {
+          setQuery(term);
+          setHomes(Array.isArray(result?.data) ? result.data : []);
+        })
+        .catch(() => {
+          setQuery(term);
+          setHomes([]);
+        });
+    }, 2000);
+
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   const visibleHomes = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -36,12 +62,11 @@ export default function HomePage() {
       ? homes.filter((home) =>
           `${home.title} ${home.location}`.toLowerCase().includes(term),
         )
-      : homes.slice(0, 3);
+      : homes;
   }, [homes, query]);
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
-    setQuery(search);
     document
       .getElementById("featured-homes")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
