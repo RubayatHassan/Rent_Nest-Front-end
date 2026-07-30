@@ -415,12 +415,22 @@ a {
 .avatar {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   background: var(--mint);
   color: var(--green);
   font-weight: 700;
+}
+.avatar-trigger {
+  overflow: hidden;
+  padding: 0;
+}
+.dashboard-avatar-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
 }
 .stats-grid {
   display: grid;
@@ -672,6 +682,23 @@ a {
   color: var(--green);
   font: 600 12px inherit;
   cursor: pointer;
+}
+.cancel-rental-button {
+  border: 1px solid #e2a5a5;
+  border-radius: 6px;
+  padding: 5px 9px;
+  background: #fff1f1;
+  color: #b42318;
+  font: 600 12px inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cancel-rental-button:hover {
+  background: #ffe0e0;
+}
+.cancel-rental-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 .detail-grid {
   display: grid;
@@ -1215,6 +1242,57 @@ a {
   border-radius: 15px;
   background: linear-gradient(145deg, #fff, #f1f8f3);
   box-shadow: 0 10px 24px #2b624012;
+}
+.review-popup {
+  position: fixed;
+  z-index: 80;
+  top: 50%;
+  left: 50%;
+  width: min(430px, calc(100vw - 32px));
+  min-width: 0;
+  padding: 28px;
+  border: 1px solid #d9e9df;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 0 0 100vmax #14251d80, 0 24px 70px #173d2d35;
+  transform: translate(-50%, -50%);
+  animation: review-popup-in 0.2s ease-out;
+}
+.review-popup .review-form-head {
+  margin-bottom: 20px;
+}
+.review-popup .review-form-head strong {
+  font-size: 16px;
+}
+.review-popup .review-form-head small {
+  font-size: 12px;
+}
+.review-popup .star-picker {
+  justify-content: center;
+  gap: 8px;
+  margin: 12px 0 2px;
+}
+.review-popup .star-picker button {
+  padding: 4px;
+}
+.review-popup .rating-label {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+}
+.review-popup textarea {
+  min-height: 110px;
+  margin-top: 8px;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 13px;
+}
+.review-popup .review-actions {
+  margin-top: 18px;
+}
+@keyframes review-popup-in {
+  from { opacity: 0; transform: translate(-50%, -47%) scale(0.97); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 .review-form-head {
   display: flex;

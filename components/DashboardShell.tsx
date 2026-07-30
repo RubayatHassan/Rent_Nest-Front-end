@@ -15,7 +15,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { getLandlordRequests, getMyRentals, logout } from "../lib/api";
-import type { Role } from "../lib/api";
+import { getMe } from "../lib/api";
+import type { Role, User } from "../lib/api";
+import { OptimizedImage } from "./OptimizedImage";
 
 const nav: Record<Role, { label: string; href: string; icon: typeof Home }[]> =
   {
@@ -86,7 +88,12 @@ export function DashboardShell({
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [pendingPayments, setPendingPayments] = useState(0);
+  const [user, setUser] = useState<User | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getMe().then(setUser).catch(() => setUser(null));
+  }, [pathname]);
 
   useEffect(() => {
     const closeMenu = (event: MouseEvent) => {
@@ -192,7 +199,19 @@ export function DashboardShell({
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen(!menuOpen)}
             >
-              {role === "ADMIN" ? "A" : role === "LANDLORD" ? "L" : "T"}
+              {user?.profilePhoto ? (
+                <OptimizedImage
+                  src={user.profilePhoto}
+                  alt={`${user.name} profile`}
+                  width={50}
+                  height={50}
+                  sizes="50px"
+                  className="dashboard-avatar-image"
+                />
+              ) : (
+                user?.name?.charAt(0).toUpperCase() ||
+                (role === "ADMIN" ? "A" : role === "LANDLORD" ? "L" : "T")
+              )}
             </button>
             {menuOpen && (
               <div className="profile-dropdown">

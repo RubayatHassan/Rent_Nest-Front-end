@@ -273,7 +273,7 @@ export default function Page() {
                   <td>
                     {canReview && openReviewId === r.id ? (
                       <form
-                        className="review-form"
+                        className="review-form review-popup"
                         onSubmit={(e) => submitReview(e, r.id)}
                       >
                         <div className="review-form-head">
@@ -359,7 +359,7 @@ export default function Page() {
                     {r.status === "PENDING" ? (
                       <button
                         type="button"
-                        className="text-button"
+                        className="cancel-rental-button"
                         disabled={cancellingId === r.id}
                         onClick={() => cancelRental(r)}
                       >
