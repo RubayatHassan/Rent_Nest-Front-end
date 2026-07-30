@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Check, MessageSquare, Send, Star, X } from "lucide-react";
 import {
   confirmPayment,
+  cancelRentalRequest,
   createPayment,
   createReview,
   getMyRentals,
@@ -20,6 +21,7 @@ export default function Page() {
   >({});
   const [openReviewId, setOpenReviewId] = useState<string | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const { toast, showToast, dismissToast } = useToast();
 
   const load = async () => {
@@ -154,6 +156,33 @@ export default function Page() {
     }
   };
 
+  const cancelRental = async (rental: RentalRequest) => {
+    if (
+      rental.status !== "PENDING" ||
+      !window.confirm("Cancel this rental request?")
+    )
+      return;
+
+    setError("");
+    setCancellingId(rental.id);
+    try {
+      await cancelRentalRequest(rental.id);
+      showToast({
+        tone: "success",
+        title: "Request cancelled",
+        message: "Your rental request was cancelled successfully.",
+      });
+      await load();
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Unable to cancel rental request";
+      setError(message);
+      showToast({ tone: "error", title: "Cancellation failed", message });
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const submitReview = async (e: FormEvent, id: string) => {
     e.preventDefault();
     const value = review[id] || { rating: "5", comment: "" };
@@ -211,6 +240,7 @@ export default function Page() {
               <th>Status</th>
               <th>Payment</th>
               <th>Review</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -320,6 +350,20 @@ export default function Page() {
                         onClick={() => setOpenReviewId(r.id)}
                       >
                         Write review
+                      </button>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td>
+                    {r.status === "PENDING" ? (
+                      <button
+                        type="button"
+                        className="text-button"
+                        disabled={cancellingId === r.id}
+                        onClick={() => cancelRental(r)}
+                      >
+                        {cancellingId === r.id ? "Cancelling…" : "Cancel request"}
                       </button>
                     ) : (
                       "-"
