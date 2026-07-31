@@ -75,12 +75,29 @@ export function DashboardPage({ role }: { role: Role }) {
     const load = async () => {
       try {
         if (isAdmin) {
-          const [users, properties, rentals, payments] = await Promise.all([
+          const [usersResult, propertiesResult, rentalsResult, paymentsResult] =
+            await Promise.allSettled([
             getAdminUsers("limit=1"),
             getAdminProperties("limit=1"),
             getAdminRentals("limit=1"),
-            getAdminPayments("limit=100"),
+            getAdminPayments("limit=25"),
           ]);
+          const users =
+            usersResult.status === "fulfilled"
+              ? usersResult.value
+              : { data: [] };
+          const properties =
+            propertiesResult.status === "fulfilled"
+              ? propertiesResult.value
+              : { data: [] };
+          const rentals =
+            rentalsResult.status === "fulfilled"
+              ? rentalsResult.value
+              : { data: [] };
+          const payments =
+            paymentsResult.status === "fulfilled"
+              ? paymentsResult.value
+              : { data: [] };
           setCounts({
             users: users.meta?.total || users.data.length,
             properties: properties.meta?.total || properties.data.length,

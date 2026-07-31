@@ -127,18 +127,28 @@ function storeAccessToken(token?: string) {
 }
 
 async function fetchApi(path: string, options: RequestInit) {
+  const fetchAttempt = async (url: string) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
   try {
-    const response = await fetch(`${API_URL}${path}`, options);
+    const response = await fetchAttempt(`${API_URL}${path}`);
     if (
       API_URL !== DIRECT_API_URL &&
       [404, 502, 503, 504].includes(response.status)
     ) {
-      return fetch(`${DIRECT_API_URL}${path}`, options);
+      return fetchAttempt(`${DIRECT_API_URL}${path}`);
     }
     return response;
   } catch (error) {
     if (API_URL !== DIRECT_API_URL) {
-      return fetch(`${DIRECT_API_URL}${path}`, options);
+      return fetchAttempt(`${DIRECT_API_URL}${path}`);
     }
     throw error;
   }
@@ -182,12 +192,9 @@ async function requestApi<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
   const accessToken = getStoredAccessToken();
   const requestOptions = {
     ...options,
-    signal: controller.signal,
     credentials: "include",
     cache: "no-store",
     headers: {
@@ -196,7 +203,15 @@ async function requestApi<T>(
       ...(options.headers || {}),
     },
   } satisfies RequestInit;
-  let response = await fetchApi(path, requestOptions);
+  let response: Response;
+  try {
+    response = await fetchApi(path, requestOptions);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("The server took too long to respond. Please try again.");
+    }
+    throw error;
+  }
 
   const method = (options.method || "GET").toUpperCase();
   if (
@@ -214,7 +229,6 @@ async function requestApi<T>(
     }
   }
 
-  clearTimeout(timeout);
   const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(formatApiError(body));
   // The backend returns pagination metadata beside `data`. Preserve it for

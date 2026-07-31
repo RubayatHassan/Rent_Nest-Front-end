@@ -3,19 +3,52 @@ import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   getAdminProperties,
+  getAdminRentals,
   Property,
   updateAdminPropertyStatus,
 } from "../../../lib/api";
 export default function Page() {
   const [items, setItems] = useState<Property[]>([]);
+  const [rentedBy, setRentedBy] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const load = () =>
-    getAdminProperties("limit=100")
-      .then((r) => setItems(r.data || []))
-      .catch((e) =>
-        setError(e instanceof Error ? e.message : "Unable to load properties"),
-      );
+    Promise.allSettled([
+      getAdminProperties("limit=100"),
+      getAdminRentals("status=ACTIVE&limit=100"),
+    ]).then(([propertiesResult, rentalsResult]) => {
+      if (propertiesResult.status === "rejected") {
+        setError(
+          propertiesResult.reason instanceof Error
+            ? propertiesResult.reason.message
+            : "Unable to load properties",
+        );
+        return;
+      }
+
+      setItems(propertiesResult.value.data || []);
+      setError("");
+
+      if (rentalsResult.status === "rejected") {
+        setRentedBy({});
+        return;
+      }
+
+      const tenants: Record<string, string> = {};
+      rentalsResult.value.data.forEach((rental) => {
+        const rentalRecord = rental as typeof rental & {
+          propertyId?: string;
+        };
+        const propertyId = rental.property?.id || rentalRecord.propertyId;
+        const tenantName = rental.tenant?.name || rental.tenant?.email;
+        if (tenantName && propertyId) {
+          if (!tenants[propertyId] || rental.status === "ACTIVE") {
+            tenants[propertyId] = tenantName;
+          }
+        }
+      });
+      setRentedBy(tenants);
+    });
   useEffect(() => {
     load();
   }, []);
@@ -28,9 +61,9 @@ export default function Page() {
     }
   };
   const filtered = items.filter((p) =>
-    `${p.title} ${p.landlord?.name || ""} ${p.category?.name || ""} ${p.location}`
+    `${p.title} ${p.landlord?.name || ""} ${p.category?.name || ""} ${p.location} ${rentedBy[p.id] || ""}`
       .toLowerCase()
-      .includes(query.toLowerCase()),
+      .includes(query.trim().toLowerCase()),
   );
   return (
     <div>
@@ -48,7 +81,7 @@ export default function Page() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search properties, landlords or categories..."
+              placeholder="Search properties, landlords, tenants or categories..."
             />
           </div>
           <span className="muted">{filtered.length} results</span>
@@ -59,6 +92,7 @@ export default function Page() {
               <th>Property</th>
               <th>Landlord</th>
               <th>Category</th>
+              <th>Rented by</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -69,6 +103,7 @@ export default function Page() {
                 <td>{p.title}</td>
                 <td>{p.landlord?.name}</td>
                 <td>{p.category?.name}</td>
+                <td>{p.status === "RENTED" ? rentedBy[p.id] || "—" : "—"}</td>
                 <td>{p.status}</td>
                 <td>
                   <select
