@@ -15,9 +15,13 @@ async function forward(
   const contentType = request.headers.get("content-type");
   const cookie = request.headers.get("cookie");
   const authorization = request.headers.get("authorization");
+  const isPublicRead =
+    request.method === "GET" &&
+    (path[0] === "properties" || path[0] === "categories");
   if (contentType) headers.set("content-type", contentType);
-  if (cookie) headers.set("cookie", cookie);
-  if (authorization) headers.set("authorization", authorization);
+  if (cookie && !isPublicRead) headers.set("cookie", cookie);
+  if (authorization && !isPublicRead)
+    headers.set("authorization", authorization);
 
   try {
     const upstream = await fetch(target, {
@@ -26,13 +30,20 @@ async function forward(
       body: request.method === "GET" || request.method === "HEAD"
         ? undefined
         : await request.arrayBuffer(),
-      cache: "no-store",
+      cache: isPublicRead ? "force-cache" : "no-store",
+      ...(isPublicRead ? { next: { revalidate: 30 } } : {}),
     });
     const responseHeaders = new Headers();
     const responseType = upstream.headers.get("content-type");
     const setCookie = upstream.headers.get("set-cookie");
     if (responseType) responseHeaders.set("content-type", responseType);
     if (setCookie) responseHeaders.set("set-cookie", setCookie);
+    if (isPublicRead) {
+      responseHeaders.set(
+        "cache-control",
+        "public, s-maxage=30, stale-while-revalidate=300",
+      );
+    }
     return new NextResponse(upstream.body, {
       status: upstream.status,
       headers: responseHeaders,

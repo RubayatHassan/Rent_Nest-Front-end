@@ -101,10 +101,23 @@ const DIRECT_API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 const ACCESS_TOKEN_KEY = "rentnest.accessToken";
 let currentUserRequest: Promise<User> | null = null;
+const GET_CACHE_TTL = 30_000;
+const getRequestCache = new Map<
+  string,
+  { expiresAt: number; promise: Promise<unknown> }
+>();
+
+function clearGetRequestCache() {
+  getRequestCache.clear();
+}
 
 function getStoredAccessToken() {
   if (typeof window === "undefined") return "";
   return window.localStorage.getItem(ACCESS_TOKEN_KEY) || "";
+}
+
+export function hasStoredAccessToken() {
+  return Boolean(getStoredAccessToken());
 }
 
 function storeAccessToken(token?: string) {
@@ -165,7 +178,7 @@ function formatApiError(body: unknown) {
   return [...new Set(messages)].join("\n") || "Something went wrong";
 }
 
-export async function api<T>(
+async function requestApi<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
@@ -210,6 +223,40 @@ export async function api<T>(
   return (body.meta ? { data: body.data, meta: body.meta } : body.data) as T;
 }
 
+export function api<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const method = (options.method || "GET").toUpperCase();
+
+  if (method !== "GET" || typeof window === "undefined") {
+    if (method !== "GET") clearGetRequestCache();
+    const request = requestApi<T>(path, options);
+    if (method === "GET" || typeof window === "undefined") return request;
+    return request.then((result) => {
+      if (!path.startsWith("/auth/"))
+        window.dispatchEvent(new Event("rentnest:api-mutated"));
+      return result;
+    });
+  }
+
+  const cacheKey = `${getStoredAccessToken()}:${path}`;
+  const cached = getRequestCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.promise as Promise<T>;
+  }
+
+  const promise = requestApi<T>(path, options).catch((error) => {
+    getRequestCache.delete(cacheKey);
+    throw error;
+  });
+  getRequestCache.set(cacheKey, {
+    expiresAt: Date.now() + GET_CACHE_TTL,
+    promise,
+  });
+  return promise;
+}
+
 export const getMe = () => {
   if (!currentUserRequest) {
     currentUserRequest = api<User>("/auth/me").finally(() => {
@@ -230,18 +277,21 @@ export const login = (payload: { email: string; password: string }) =>
     body: JSON.stringify(payload),
   }).then((result) => {
     storeAccessToken(result.accessToken);
+    clearGetRequestCache();
     return result;
   });
 export const logout = () =>
   api<null>("/auth/logout", { method: "POST" }).finally(() => {
     storeAccessToken();
     currentUserRequest = null;
+    clearGetRequestCache();
   });
 export const refreshToken = () =>
   api<{ accessToken?: string; message?: string }>("/auth/refresh-token", {
     method: "POST",
   }).then((result) => {
     storeAccessToken(result.accessToken);
+    clearGetRequestCache();
     return result;
   });
 export const register = (payload: {

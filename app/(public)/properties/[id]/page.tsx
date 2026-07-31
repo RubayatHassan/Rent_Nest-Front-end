@@ -6,13 +6,13 @@ import { FormEvent, useEffect, useState } from "react";
 import { Bookmark, ChevronDown, ChevronUp, Star } from "lucide-react";
 import {
   createRentalRequest,
-  getMe,
   getProperty,
   Property,
 } from "../../../../lib/api";
 import { money } from "../../../../lib/mappers";
 import { useSavedHomes } from "../../../../hooks/useSavedHomes";
 import { OptimizedImage } from "../../../../components/OptimizedImage";
+import { useCurrentUser } from "../../../../hooks/useRentNestQueries";
 
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
@@ -22,8 +22,9 @@ export default function PropertyDetails() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [isTenant, setIsTenant] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { data: user, isLoading: isUserLoading } = useCurrentUser();
+  const isAuthenticated = isUserLoading ? null : Boolean(user);
+  const isTenant = user?.role === "TENANT";
   const [showReviews, setShowReviews] = useState(false);
   const { isSaved, toggle: toggleSaved } = useSavedHomes();
 
@@ -36,15 +37,6 @@ export default function PropertyDetails() {
             err instanceof Error ? err.message : "Unable to load property",
           ),
         );
-    getMe()
-      .then((user) => {
-        setIsAuthenticated(true);
-        setIsTenant(user.role === "TENANT");
-      })
-      .catch(() => {
-        setIsAuthenticated(false);
-        setIsTenant(false);
-      });
   }, [id]);
 
   const submit = async (event: FormEvent) => {
@@ -247,7 +239,10 @@ export default function PropertyDetails() {
             )}
           </div>
           {isAuthenticated === false && (
-            <Link href="/login" className="button">
+            <Link
+              href={`/login?returnTo=${encodeURIComponent(`/properties/${id}`)}`}
+              className="button"
+            >
               Book this property
             </Link>
           )}

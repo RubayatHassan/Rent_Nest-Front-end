@@ -53,6 +53,7 @@ export function OptimizedImage({
         height={height}
         sizes={sizes}
         priority={priority}
+        quality={70}
         className={className}
         style={{ objectFit: "cover" }}
       />
@@ -66,6 +67,7 @@ export function OptimizedImage({
       fill
       sizes={sizes}
       priority={priority}
+      quality={70}
       className={className}
       style={{ objectFit: "cover" }}
     />

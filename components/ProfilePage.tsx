@@ -5,22 +5,26 @@ import { AlertTriangle } from "lucide-react";
 import {
   deleteMyAccount,
   deleteMyProfilePhoto,
-  getMyProfile,
   updateMyProfile,
-  User,
 } from "../lib/api";
 import { useRouter } from "next/navigation";
 import { OptimizedImage } from "./OptimizedImage";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCurrentUser } from "../hooks/useRentNestQueries";
 
 export function ProfilePage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<User | null>(null);
+  const queryClient = useQueryClient();
+  const {
+    data: profile,
+    isPending: loading,
+    error: profileError,
+  } = useCurrentUser(true);
   const [form, setForm] = useState({
     phone: "",
     address: "",
     profilePhoto: "",
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -28,27 +32,14 @@ export function ProfilePage() {
   const [deleteStep, setDeleteStep] = useState<1 | 2>(1);
   const [deleting, setDeleting] = useState(false);
 
-  const loadProfile = async () => {
-    try {
-      const user = await getMyProfile();
-      setProfile(user);
-      setForm({
-        phone: user.phone || "",
-        address: user.address || "",
-        profilePhoto: user.profilePhoto || "",
-      });
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to load your profile",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (!profile) return;
+    setForm({
+      phone: profile.phone || "",
+      address: profile.address || "",
+      profilePhoto: profile.profilePhoto || "",
+    });
+  }, [profile?.id]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,7 +56,7 @@ export function ProfilePage() {
     }
     try {
       const updated = await updateMyProfile(payload);
-      setProfile(updated);
+      queryClient.setQueryData(["auth", "me"], updated);
       setForm({ phone: "", address: "", profilePhoto: "" });
       setMessage("Profile updated successfully.");
       window.setTimeout(() => setMessage(""), 2000);
@@ -83,7 +74,7 @@ export function ProfilePage() {
     setMessage("");
     try {
       const updated = await deleteMyProfilePhoto();
-      setProfile(updated);
+      queryClient.setQueryData(["auth", "me"], updated);
       setForm({ ...form, profilePhoto: "" });
       setMessage("Profile photo removed.");
       window.setTimeout(() => setMessage(""), 2000);
@@ -115,7 +106,12 @@ export function ProfilePage() {
     return <div className="loading-state">Loading your profile…</div>;
   if (!profile)
     return (
-      <p className="form-error">{error || "Unable to load your profile"}</p>
+      <p className="form-error">
+        {error ||
+          (profileError instanceof Error
+            ? profileError.message
+            : "Unable to load your profile")}
+      </p>
     );
 
   return (

@@ -2,19 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getMe, logout, User } from "../lib/api";
+import { logout } from "../lib/api";
+import { useCurrentUser } from "../hooks/useRentNestQueries";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function PublicHeader() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    getMe()
-      .then(setUser)
-      .catch(() => setUser(null));
-  }, [pathname]);
+  const { data: user } = useCurrentUser();
 
   const dashboardPath =
     user?.role === "ADMIN"
@@ -27,7 +23,7 @@ export function PublicHeader() {
     try {
       await logout();
     } finally {
-      setUser(null);
+      queryClient.removeQueries({ queryKey: ["auth", "me"] });
       router.push("/");
       router.refresh();
     }
@@ -61,7 +57,10 @@ export function PublicHeader() {
           </>
         ) : (
           <>
-            <Link href="/login" className="nav-login">
+            <Link
+              href={pathname === "/" ? "/login?returnTo=/" : "/login"}
+              className="nav-login"
+            >
               Log in
             </Link>
             <Link href="/register" className="button button-small">

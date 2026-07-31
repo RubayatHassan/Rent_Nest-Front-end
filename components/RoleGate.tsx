@@ -1,7 +1,8 @@
 "use client";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getMe, Role } from "../lib/api";
+import { Role } from "../lib/api";
+import { useCurrentUser } from "../hooks/useRentNestQueries";
 export function RoleGate({
   role,
   children,
@@ -10,23 +11,33 @@ export function RoleGate({
   children: ReactNode;
 }) {
   const router = useRouter();
-  const [allowed, setAllowed] = useState(false);
+  const { data: user, isPending, isError } = useCurrentUser(true);
+
   useEffect(() => {
-    getMe()
-      .then((user) => {
-        if (user.role !== role) {
-          router.replace(
-            user.role === "ADMIN"
-              ? "/admin-dashboard"
-              : user.role === "LANDLORD"
-                ? "/landlord-dashboard"
-                : "/user-dashboard",
-          );
-        } else setAllowed(true);
-      })
-      .catch(() => router.replace("/login"));
-  }, [role, router]);
-  return allowed ? (
+    if (isError) {
+      router.replace("/login");
+      return;
+    }
+    if (!isPending && user && user.role !== role) {
+      router.replace(
+        user.role === "ADMIN"
+          ? "/admin-dashboard"
+          : user.role === "LANDLORD"
+            ? "/landlord-dashboard"
+            : "/user-dashboard",
+      );
+    }
+  }, [isError, isPending, role, router, user]);
+
+  if (isError) {
+    return <div className="loading-state">Redirecting to login…</div>;
+  }
+
+  if (!isPending && user && user.role !== role) {
+    return <div className="loading-state">Opening your workspace…</div>;
+  }
+
+  return !isPending && user?.role === role ? (
     <>{children}</>
   ) : (
     <div className="loading-state">Loading your workspace…</div>

@@ -1,7 +1,8 @@
 "use client";
 import { Plus, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "../lib/api";
+import { useQuery } from "@tanstack/react-query";
 import {
   categoryRows,
   paymentRows,
@@ -50,24 +51,18 @@ export function ResourcePage({
   endpoint: string;
   mapRows: ResourceMapper;
 }) {
-  const [data, setData] = useState<unknown[]>([]);
   const [query, setQuery] = useState("");
-  const [error, setError] = useState("");
-  useEffect(() => {
-    api<unknown>(endpoint)
-      .then((result) =>
-        setData(
-          Array.isArray(result)
-            ? result
-            : Array.isArray((result as { data?: unknown[] }).data)
-              ? (result as { data: unknown[] }).data
-              : [result],
-        ),
-      )
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "Unable to load data"),
-      );
-  }, [endpoint]);
+  const { data: result, isPending, error } = useQuery({
+    queryKey: ["resource", endpoint],
+    queryFn: () => api<unknown>(endpoint),
+  });
+  const data = !result
+    ? []
+    : Array.isArray(result)
+      ? result
+      : Array.isArray((result as { data?: unknown[] }).data)
+        ? (result as { data: unknown[] }).data
+        : [result];
   const rows = useMemo(
     () =>
       mappers[mapRows](data).filter((row) =>
@@ -101,10 +96,14 @@ export function ResourcePage({
               placeholder="Search…"
             />
           </div>
-          <span className="muted">{rows.length} records</span>
+          <span className="muted">
+            {isPending ? "Loading…" : `${rows.length} records`}
+          </span>
         </div>
         {error ? (
-          <p className="form-error">{error}</p>
+          <p className="form-error">
+            {error instanceof Error ? error.message : "Unable to load data"}
+          </p>
         ) : (
           <table className="data-table">
             <thead>

@@ -1,57 +1,38 @@
 "use client";
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import {
-  getCategories,
-  getProperties,
   Category,
   Property,
 } from "../../../lib/api";
 import { money } from "../../../lib/mappers";
 import { OptimizedImage } from "../../../components/OptimizedImage";
+import {
+  useCategories,
+  useProperties,
+} from "../../../hooks/useRentNestQueries";
 export default function PropertiesPage() {
-  const [homes, setHomes] = useState<Property[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [query, setQuery] = useState({ searchTerm: "", categoryId: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({ searchTerm: "", categoryId: "" });
   const [page, setPage] = useState(1);
-  const [error, setError] = useState("");
-  const load = () => {
-    getProperties("limit=100")
-      .then((result) => {
-        setHomes(Array.isArray(result?.data) ? result.data : []);
-      })
-      .catch((err) =>
-        setError(
-          err instanceof Error ? err.message : "Unable to load properties",
-        ),
-      );
-  };
-  useEffect(() => {
-    getCategories()
-      .then((result) =>
-        setCategories(Array.isArray(result.data) ? result.data : []),
-      )
-      .catch(() => undefined);
-  }, []);
-  useEffect(() => {
-    load();
-  }, []);
-  const filteredHomes = useMemo(() => {
-    const term = query.searchTerm.trim().toLowerCase();
-    return homes.filter((home) => {
-      const matchesSearch = !term ||
-        `${home.title} ${home.location} ${home.address || ""} ${home.category?.name || ""}`
-          .toLowerCase()
-          .includes(term);
-      const matchesCategory =
-        !query.categoryId || home.category?.id === query.categoryId;
-      return matchesSearch && matchesCategory;
-    });
-  }, [homes, query]);
-  const totalPages = Math.max(1, Math.ceil(filteredHomes.length / 6));
-  const visibleHomes = filteredHomes.slice((page - 1) * 6, page * 6);
+  const { data: properties, isPending, isError } = useProperties(
+    page,
+    6,
+    filters,
+  );
+  const { data: categoryResult } = useCategories();
+  const homes: Property[] = Array.isArray(properties?.data)
+    ? properties.data
+    : [];
+  const categories: Category[] = Array.isArray(categoryResult?.data)
+    ? categoryResult.data
+    : [];
+  const totalPages = Math.max(1, properties?.meta?.totalPages || 1);
+  const visibleHomes = homes;
   const search = (event: FormEvent) => {
     event.preventDefault();
+    setPage(1);
+    setFilters((current) => ({ ...current, searchTerm: searchTerm.trim() }));
     document
       .querySelector(".property-grid")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -77,18 +58,19 @@ export default function PropertiesPage() {
         style={{ marginBottom: 24 }}
       >
         <input
-          value={query.searchTerm}
+          value={searchTerm}
           onChange={(event) => {
-            setQuery({ ...query, searchTerm: event.target.value });
-            setPage(1);
+            setSearchTerm(event.target.value);
           }}
           placeholder="Search location or property..."
         />
         <select
-          value={query.categoryId}
+          value={filters.categoryId}
           onChange={(event) => {
-            const nextQuery = { ...query, categoryId: event.target.value };
-            setQuery(nextQuery);
+            setFilters((current) => ({
+              ...current,
+              categoryId: event.target.value,
+            }));
             setPage(1);
           }}
         >
@@ -101,8 +83,14 @@ export default function PropertiesPage() {
         </select>
         <button className="button button-small">Search</button>
       </form>
-      {error ? (
-        <p className="form-error">{error}</p>
+      {isError ? (
+        <p className="form-error">Unable to load properties</p>
+      ) : isPending ? (
+        <div className="property-grid" aria-label="Loading properties">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <div className="property-card skeleton-card" key={item} />
+          ))}
+        </div>
       ) : (
         <div className="property-grid">
           {visibleHomes.map((home, i) => (

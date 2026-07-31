@@ -1,11 +1,27 @@
 "use client";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { login } from "../../../lib/api";
+import { FormEvent, useEffect, useState } from "react";
+import { getMe, login } from "../../../lib/api";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState("");
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const requestedPath = new URLSearchParams(window.location.search).get(
+      "returnTo",
+    );
+
+    // Only allow internal paths so the login redirect cannot send users to an
+    // external site.
+    if (requestedPath?.startsWith("/") && !requestedPath.startsWith("//")) {
+      setReturnTo(requestedPath);
+    }
+  }, []);
+
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
@@ -15,12 +31,20 @@ export default function LoginPage() {
         email: String(f.get("email")),
         password: String(f.get("password")),
       });
+      // Login response does not include profilePhoto, so refresh the full
+      // profile before dashboard components read the cached auth user.
+      try {
+        const fullUser = await getMe();
+        queryClient.setQueryData(["auth", "me"], fullUser);
+      } catch {
+        queryClient.setQueryData(["auth", "me"], user);
+      }
       const destination =
         user.role === "ADMIN"
           ? "/admin-dashboard"
           : user.role === "LANDLORD"
             ? "/landlord-dashboard"
-            : "/";
+            : returnTo || "/";
       router.push(destination);
       router.refresh();
     } catch (err) {

@@ -3,20 +3,23 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { register, Role } from "../../../lib/api";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 export default function RegisterPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState("");
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     const f = new FormData(e.currentTarget);
     try {
-      await register({
+      const result = await register({
         name: String(f.get("name")),
         email: String(f.get("email")),
         password: String(f.get("password")),
         role: String(f.get("role")) as Role,
       });
+      if (result.user) queryClient.setQueryData(["auth", "me"], result.user);
       router.push("/");
       router.refresh();
     } catch (err) {

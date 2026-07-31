@@ -14,10 +14,13 @@ import {
   UserCircle,
   LogOut,
 } from "lucide-react";
-import { getLandlordRequests, getMyRentals, logout } from "../lib/api";
-import { getMe } from "../lib/api";
-import type { Role, User } from "../lib/api";
+import { logout } from "../lib/api";
+import type { Role } from "../lib/api";
 import { OptimizedImage } from "./OptimizedImage";
+import {
+  useCurrentUser,
+  useDashboardNotificationData,
+} from "../hooks/useRentNestQueries";
 
 const nav: Record<Role, { label: string; href: string; icon: typeof Home }[]> =
   {
@@ -86,14 +89,9 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState(0);
-  const [pendingPayments, setPendingPayments] = useState(0);
-  const [user, setUser] = useState<User | null>(null);
+  const { data: user } = useCurrentUser(true);
+  const { data: notificationData } = useDashboardNotificationData(role);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    getMe().then(setUser).catch(() => setUser(null));
-  }, [pathname]);
 
   useEffect(() => {
     const closeMenu = (event: MouseEvent) => {
@@ -104,31 +102,19 @@ export function DashboardShell({
     return () => document.removeEventListener("mousedown", closeMenu);
   }, []);
 
-  useEffect(() => {
-    if (role === "LANDLORD") {
-      getLandlordRequests()
-        .then((requests) =>
-          setPendingRequests(
-            requests.filter((request) => request.status === "PENDING").length,
-          ),
-        )
-        .catch(() => setPendingRequests(0));
-      return;
-    }
-    if (role === "TENANT") {
-      getMyRentals()
-        .then((rentals) =>
-          setPendingPayments(
-            rentals.filter(
-              (rental) =>
-                rental.status === "APPROVED" &&
-                rental.payment?.status !== "COMPLETED",
-            ).length,
-          ),
-        )
-        .catch(() => setPendingPayments(0));
-    }
-  }, [role, pathname]);
+  const pendingRequests =
+    role === "LANDLORD" && Array.isArray(notificationData)
+      ? notificationData.filter((request) => request.status === "PENDING")
+          .length
+      : 0;
+  const pendingPayments =
+    role === "TENANT" && Array.isArray(notificationData)
+      ? notificationData.filter(
+          (rental) =>
+            rental.status === "APPROVED" &&
+            rental.payment?.status !== "COMPLETED",
+        ).length
+      : 0;
 
   const signOut = async () => {
     try {

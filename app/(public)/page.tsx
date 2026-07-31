@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,26 +12,17 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { getProperties, Property } from "../../lib/api";
+import { Property } from "../../lib/api";
 import { money } from "../../lib/mappers";
 import { OptimizedImage } from "../../components/OptimizedImage";
+import { useProperties } from "../../hooks/useRentNestQueries";
 
 export default function HomePage() {
-  const [homes, setHomes] = useState<Property[]>([]);
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
-  const [error, setError] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-
-  useEffect(() => {
-    getProperties("limit=100")
-      .then((result) =>
-        setHomes(Array.isArray(result?.data) ? result.data : []),
-      )
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "Unable to load homes"),
-      );
-  }, []);
+  const { data, isPending, isError } = useProperties(1, 3);
+  const homes: Property[] = Array.isArray(data?.data) ? data.data : [];
 
   const visibleHomes = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -163,8 +154,14 @@ export default function HomePage() {
             View all homes <ArrowRight size={15} />
           </Link>
         </div>
-        {error ? (
-          <p className="form-error">{error}</p>
+        {isError ? (
+          <p className="form-error">Unable to load homes</p>
+        ) : isPending ? (
+          <div className="property-grid" aria-label="Loading homes">
+            {[1, 2, 3].map((item) => (
+              <div className="property-card skeleton-card" key={item} />
+            ))}
+          </div>
         ) : visibleHomes.length ? (
           <div className="property-grid">
             {visibleHomes.map((home, index) => (
