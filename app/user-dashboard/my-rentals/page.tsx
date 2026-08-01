@@ -131,21 +131,21 @@ export default function Page() {
     setError("");
     setPayingId(id);
     try {
-      const returnPath = "/user-dashboard/my-rentals";
-      const successUrl = `${window.location.origin}${returnPath}?payment=success&rentalRequestId=${encodeURIComponent(id)}`;
-      const cancelUrl = `${window.location.origin}${returnPath}?payment=cancelled&rentalRequestId=${encodeURIComponent(id)}`;
       const result = await createPayment({
         rentalRequestId: id,
         provider: "STRIPE",
         method: "CARD",
-        successUrl,
-        cancelUrl,
       });
       const checkout = "payment" in result ? result : { payment: result };
       const paymentUrl =
-        checkout.paymentUrl || checkout.payment?.gatewayResponse?.checkoutUrl;
+        checkout.paymentUrl ||
+        checkout.payment?.gatewayResponse?.checkoutUrl ||
+        (checkout as { gatewayResponse?: { checkoutUrl?: string } })
+          .gatewayResponse?.checkoutUrl;
       if (!paymentUrl)
-        throw new Error("Checkout URL was not returned by the payment API");
+        throw new Error(
+          "Payment checkout could not be started because the payment API did not return a checkout URL.",
+        );
       sessionStorage.setItem(PENDING_PAYMENT_KEY, id);
       window.location.assign(paymentUrl);
     } catch (e) {

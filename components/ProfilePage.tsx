@@ -161,6 +161,16 @@ export function ProfilePage() {
           <h2>{profile.name}</h2>
           <p className="muted">{profile.email}</p>
           <span className="badge">{profile.role}</span>
+          <div className="profile-contact-summary">
+            <p>
+              <strong>Phone</strong>
+              <span>{profile.phone || "Not added yet"}</span>
+            </p>
+            <p>
+              <strong>Address</strong>
+              <span>{profile.address || "Not added yet"}</span>
+            </p>
+          </div>
         </section>
         <form className="panel profile-form" onSubmit={submit}>
           <h2>Update your information</h2>

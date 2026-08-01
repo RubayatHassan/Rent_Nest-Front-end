@@ -624,6 +624,31 @@ a {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+.user-contact-cell {
+  display: grid;
+  gap: 7px;
+  min-width: 245px;
+  white-space: normal;
+}
+.user-contact-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+.user-contact-row span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+}
+.user-contact-row strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
 .badge {
   background: var(--mint);
   color: var(--green);
@@ -1578,6 +1603,29 @@ a {
 .profile-summary .badge {
   display: inline-block;
   margin: 16px 0;
+}
+.profile-contact-summary {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+.profile-contact-summary p {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  font-size: 12px;
+}
+.profile-contact-summary strong {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.profile-contact-summary span {
+  overflow-wrap: anywhere;
 }
 .profile-summary .text-button {
   display: block;

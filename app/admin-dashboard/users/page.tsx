@@ -27,7 +27,7 @@ export default function Page() {
     }
   };
   const filtered = items.filter((u) =>
-    `${u.name} ${u.email} ${u.role} ${u.activeStatus}`
+    `${u.name} ${u.email} ${u.phone || ""} ${u.address || ""} ${u.role} ${u.activeStatus}`
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
@@ -56,7 +56,7 @@ export default function Page() {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Email</th>
+              <th>Contact</th>
               <th>Role</th>
               <th>Status</th>
               <th>Action</th>
@@ -66,7 +66,22 @@ export default function Page() {
             {filtered.map((u) => (
               <tr key={u.id}>
                 <td>{u.name}</td>
-                <td>{u.email}</td>
+                <td>
+                  <div className="user-contact-cell">
+                    <div className="user-contact-row">
+                      <span>Email</span>
+                      <strong>{u.email}</strong>
+                    </div>
+                    <div className="user-contact-row">
+                      <span>Phone</span>
+                      <strong>{u.phone || "Not added"}</strong>
+                    </div>
+                    <div className="user-contact-row">
+                      <span>Address</span>
+                      <strong>{u.address || "Not added"}</strong>
+                    </div>
+                  </div>
+                </td>
                 <td>{u.role}</td>
                 <td>{u.activeStatus}</td>
                 <td>
