@@ -170,8 +170,8 @@ Performance features include:
 For deployed payments, configure the backend environment variables correctly:
 
 ```env
-APP_URL=https://your-frontend-domain.vercel.app
-SERVER_URL=https://your-backend-domain.vercel.app
+APP_URL=https://rent-nest-frontend-iota.vercel.app
+SERVER_URL=https://rentnest-backend-rho.vercel.app
 ```
 
 `APP_URL` must point to the frontend. `SERVER_URL` must point to the backend.
