@@ -3,6 +3,8 @@
 RentNest is a rental marketplace where tenants can discover homes, send rental requests, make payments, and manage their rental activity. Landlords can manage listings and requests, while administrators can manage users, properties, rentals, payments, categories, and reviews.
 
 This repository contains the Next.js frontend. The Express/Prisma backend is maintained in the sibling `RentNest` project.
+# Payment
+Card: 4242 4242 4242 4242
 
 ## Features
 
